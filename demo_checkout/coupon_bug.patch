@@ -1,0 +1,11 @@
+diff --git a/shop/pricing.py b/shop/pricing.py
+index 25aa385..e12b52c 100644
+--- a/shop/pricing.py
++++ b/shop/pricing.py
+@@ -5,5 +5,5 @@ def apply_coupon(subtotal_cents: int, coupon_cents: int) -> int:
+     """Return a discounted subtotal, never below zero."""
+     if subtotal_cents < 0 or coupon_cents < 0:
+         raise ValueError("money amounts must be non-negative")
+-    discount_cents = min(subtotal_cents, coupon_cents)
++    discount_cents = coupon_cents  # BUG: a coupon can exceed the cart subtotal
+     return subtotal_cents - discount_cents

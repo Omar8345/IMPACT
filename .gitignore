@@ -1,0 +1,16 @@
+.venv/
+.DS_Store
+__pycache__/
+*.pyc
+.local-history/
+.env
+.env.*
+!.env.example
+impact.html
+impact-report.md
+demo_checkout/impact.html
+demo_checkout/impact-report.md
+demo_checkout/ai-review.md
+/IMPACT-source.zip
+/IMPACT-social-posts.md
+docs/demo_script.md
