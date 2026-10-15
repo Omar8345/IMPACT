@@ -3,10 +3,13 @@ import argparse
 import subprocess
 from pathlib import Path
 from repo_parser import parse_repo, parse_diff, changed_functions
+import graph
 
 def cmd_index(a):
     funcs, edges = parse_repo(a.repo)
-    print(f"Parsed {len(funcs)} functions and {len(edges)} call edges.")
+    g = graph.connect()
+    graph.load(g, funcs, edges)
+    print(f"Indexed {len(funcs)} functions and {len(edges)} call edges into FalkorDB.")
 
 def main():
     p = argparse.ArgumentParser(description="PR impact agent")
