@@ -2,9 +2,11 @@
 import argparse
 import subprocess
 from pathlib import Path
+from repo_parser import parse_repo, parse_diff, changed_functions
 
 def cmd_index(a):
-    print("IMPACT sample checkout: " + str(Path(a.repo).resolve()))
+    funcs, edges = parse_repo(a.repo)
+    print(f"Parsed {len(funcs)} functions and {len(edges)} call edges.")
 
 def main():
     p = argparse.ArgumentParser(description="PR impact agent")
