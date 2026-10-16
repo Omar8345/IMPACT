@@ -26,6 +26,7 @@ def cmd_review(a):
     print(report)
     if a.report:
         Path(a.report).write_text(report + "\n", encoding="utf-8")
+    review.write_html(changed, impacts, a.html, run, decision)
     return report
 
 def main():
@@ -42,6 +43,7 @@ def main():
     s.add_argument("--run-tests", action="store_true")
     s.add_argument("--report")
     s.add_argument("--llm", action="store_true")
+    s.add_argument("--html", default="impact.html")
     s.set_defaults(fn=cmd_review)
     a = p.parse_args()
     a.fn(a)

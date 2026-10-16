@@ -284,3 +284,48 @@ def llm_decision(changed, diff_text, impacts, direct_tests=()):
             "priority_test": priority, "reason": REASONS[reason]}
 
 
+HTML = Path(__file__).with_name("impact_template.html").read_text(encoding="utf-8")
+
+
+def write_html(changed, impacts, path, test_run=None, decision=None, company_context=None):
+    nodes, edges = {}, set()
+    for f in changed:
+        nodes[f.id] = {"id": f.id, "file": Path(f.file).name, "name": f.qualname,
+                       "kind": "test" if f.is_test else "change", "changed": True,
+                       "depth": 0, "path": [f.id]}
+    for affected in impacts.values():
+        for a in affected:
+            chain = list(reversed(a["path"]))
+            for depth, fid in enumerate(chain):
+                file, _, name = fid.partition("::")
+                kind = "test" if fid == a["id"] and a["is_test"] else "function"
+                old = nodes.get(fid)
+                if old is None:
+                    nodes[fid] = {"id": fid, "file": Path(file).name, "name": name,
+                                  "kind": kind, "changed": False, "depth": depth,
+                                  "path": chain[:depth + 1]}
+                elif (old["kind"] == "test" and old["changed"] and depth > 0 and
+                      (old["depth"] == 0 or depth < old["depth"])):
+                    old["depth"], old["path"] = depth, chain[:depth + 1]
+                elif not old["changed"]:
+                    if depth < old["depth"]:
+                        old["depth"], old["path"] = depth, chain[:depth + 1]
+                    if kind == "test":
+                        old["kind"] = "test"
+            edges.update(zip(chain, chain[1:]))
+    if test_run:
+        for node in nodes.values():
+            if node["kind"] == "test":
+                node["status"] = test_run["statuses"].get(tools.pytest_id(node["id"]), "unknown")
+    data = {"nodes": list(nodes.values()),
+            "edges": [{"from": x, "to": y} for x, y in sorted(edges)],
+            "ai": ({"focus": decision["focus_function"],
+                    "priority_test": decision["priority_test"],
+                    "reason": decision["reason"]} if decision else None),
+            "company": [{"function": c["function"], "owners": c["owners"],
+                         "sources": [{key: s[key] for key in ("id", "kind", "title", "path")}
+                                     for s in c["sources"]]}
+                        for c in (company_context or []) if c["owners"] or c["sources"]]}
+    payload = (json.dumps(data).replace("<", "\\u003c").replace(">", "\\u003e")
+               .replace("&", "\\u0026"))
+    Path(path).write_text(HTML.replace("__DATA__", payload), encoding="utf-8")
