@@ -20,8 +20,11 @@ def cmd_review(a):
         print("No Python functions changed in this diff.")
         return
     impacts = review.compute_impacts(changed, a.hops)
-    report = review.deterministic_report(changed, impacts)
+    run = review.run_selected_tests(a.repo, impacts, direct_tests=[f.id for f in changed if f.is_test]) if a.run_tests else None
+    report = review.deterministic_report(changed, impacts, a.repo, run)
     print(report)
+    if a.report:
+        Path(a.report).write_text(report + "\n", encoding="utf-8")
     return report
 
 def main():
@@ -35,6 +38,8 @@ def main():
     s.add_argument("--base", default="HEAD~1")
     s.add_argument("--diff-file")
     s.add_argument("--hops", type=int, default=4)
+    s.add_argument("--run-tests", action="store_true")
+    s.add_argument("--report")
     s.set_defaults(fn=cmd_review)
     a = p.parse_args()
     a.fn(a)
