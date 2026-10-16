@@ -5,6 +5,7 @@ from pathlib import Path
 from repo_parser import parse_repo, parse_diff, changed_functions
 import graph
 import review
+import github_pr
 
 def cmd_index(a):
     funcs, edges = parse_repo(a.repo)
@@ -29,6 +30,21 @@ def cmd_review(a):
     review.write_html(changed, impacts, a.html, run, decision)
     return report
 
+def cmd_pr(a):
+    pr = github_pr.get_pr(a.url)
+    with github_pr.checkout_pr(pr) as (repo, diff):
+        funcs, edges = parse_repo(repo)
+        graph.load(graph.connect(), funcs, edges)
+        a.repo = str(repo)
+        a.diff_file = None
+        changed = changed_functions(funcs, parse_diff(diff))
+        impacts = review.compute_impacts(changed, a.hops)
+        report = review.deterministic_report(changed, impacts, repo)
+        print(report)
+        review.write_html(changed, impacts, a.html)
+    if a.post_comment:
+        github_pr.post_comment(pr, "## IMPACT review\n\n" + report)
+
 def main():
     p = argparse.ArgumentParser(description="PR impact agent")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -45,6 +61,12 @@ def main():
     s.add_argument("--llm", action="store_true")
     s.add_argument("--html", default="impact.html")
     s.set_defaults(fn=cmd_review)
+    s = sub.add_parser("pr")
+    s.add_argument("url")
+    s.add_argument("--post-comment", action="store_true")
+    s.add_argument("--html", default="impact.html")
+    s.add_argument("--hops", type=int, default=4)
+    s.set_defaults(fn=cmd_pr)
     a = p.parse_args()
     a.fn(a)
 
