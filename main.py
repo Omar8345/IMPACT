@@ -20,8 +20,9 @@ def cmd_review(a):
         print("No Python functions changed in this diff.")
         return
     impacts = review.compute_impacts(changed, a.hops)
-    run = review.run_selected_tests(a.repo, impacts, direct_tests=[f.id for f in changed if f.is_test]) if a.run_tests else None
-    report = review.deterministic_report(changed, impacts, a.repo, run)
+    decision = review.llm_decision(changed, diff, impacts, [f.id for f in changed if f.is_test]) if a.llm else None
+    run = review.run_selected_tests(a.repo, impacts, direct_tests=[f.id for f in changed if f.is_test], priority_test=decision["priority_test"] if decision else None) if a.run_tests else None
+    report = decision["report"] + "\n\n" + review.graph_evidence_section(changed, impacts) if decision else review.deterministic_report(changed, impacts, a.repo, run)
     print(report)
     if a.report:
         Path(a.report).write_text(report + "\n", encoding="utf-8")
@@ -40,6 +41,7 @@ def main():
     s.add_argument("--hops", type=int, default=4)
     s.add_argument("--run-tests", action="store_true")
     s.add_argument("--report")
+    s.add_argument("--llm", action="store_true")
     s.set_defaults(fn=cmd_review)
     a = p.parse_args()
     a.fn(a)
