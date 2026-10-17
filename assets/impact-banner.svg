@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800" role="img" aria-labelledby="title description">
+  <title id="title">IMPACT — graph-backed PR review</title>
+  <desc id="description">A dark, dotted technical banner tracing a changed coupon function through callers to a failing test.</desc>
+  <defs>
+    <radialGradient id="backlight" cx="73%" cy="48%" r="68%">
+      <stop offset="0%" stop-color="#20272a"/>
+      <stop offset="62%" stop-color="#141719"/>
+      <stop offset="100%" stop-color="#0e1012"/>
+    </radialGradient>
+    <linearGradient id="redline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff4b57"/>
+      <stop offset="70%" stop-color="#f13d51"/>
+      <stop offset="100%" stop-color="#ff8b94"/>
+    </linearGradient>
+    <linearGradient id="cardBorder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#687278"/>
+      <stop offset="48%" stop-color="#343a3f"/>
+      <stop offset="100%" stop-color="#1f2529"/>
+    </linearGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#596166" opacity="0.42"/>
+    </pattern>
+    <filter id="softGlow" x="-50%" y="-100%" width="200%" height="300%">
+      <feGaussianBlur stdDeviation="17"/>
+    </filter>
+    <clipPath id="frame"><rect x="35" y="35" width="1530" height="730" rx="28"/></clipPath>
+    <style>
+      .mono { font-family: Menlo, Monaco, Consolas, 'DejaVu Sans Mono', monospace; }
+      .sans { font-family: 'Helvetica Neue', Arial, sans-serif; }
+      .caps { letter-spacing: 3.2px; font-size: 17px; font-weight: 700; }
+      .label { letter-spacing: 1.4px; font-size: 14px; font-weight: 700; }
+      .nodeTitle { font-size: 17px; font-weight: 700; fill: #f4f4ef; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="800" fill="#0b0d0f"/>
+  <rect x="35" y="35" width="1530" height="730" rx="28" fill="url(#backlight)" stroke="#3b4146" stroke-width="2"/>
+  <g clip-path="url(#frame)">
+    <rect x="35" y="35" width="1530" height="730" fill="url(#dots)" opacity="0.55"/>
+    <circle cx="1120" cy="325" r="280" fill="#ff4b57" opacity="0.055" filter="url(#softGlow)"/>
+    <path d="M 66 79 H 525" stroke="url(#redline)" stroke-width="4"/>
+    <path d="M 575 79 H 1536" stroke="#343a3e" stroke-width="2"/>
+    <path d="M 66 724 H 1536" stroke="#353b40" stroke-width="2"/>
+    <path d="M 66 724 H 460" stroke="url(#redline)" stroke-width="4"/>
+
+    <!-- 3x3 dot mark -->
+    <g fill="#ff4b57">
+      <circle cx="112" cy="158" r="7"/><circle cx="134" cy="158" r="7" opacity="0.45"/><circle cx="156" cy="158" r="7"/>
+      <circle cx="112" cy="180" r="7"/><circle cx="134" cy="180" r="7"/><circle cx="156" cy="180" r="7" opacity="0.45"/>
+      <circle cx="112" cy="202" r="7"/><circle cx="134" cy="202" r="7"/><circle cx="156" cy="202" r="7"/>
+    </g>
+    <text x="195" y="188" class="mono caps" fill="#ff5965">GRAPH INTELLIGENCE / 001</text>
+
+    <text x="103" y="362" class="sans" font-size="142" font-weight="900" fill="#f5f5f1">IMPACT<tspan fill="#ff4b57">.</tspan></text>
+    <text x="110" y="426" class="mono" font-size="28" fill="#d9dedb">Trace a code change</text>
+    <text x="110" y="466" class="mono" font-size="28" fill="#d9dedb">to the tests it reaches.</text>
+
+    <rect x="108" y="546" width="216" height="47" rx="7" fill="#171a1c" stroke="#ff4b57" stroke-width="2"/>
+    <text x="130" y="576" class="mono label" fill="#f0f1ee">PYTHON PR REVIEW</text>
+    <rect x="340" y="546" width="223" height="47" rx="7" fill="#171a1c" stroke="#535b61" stroke-width="2"/>
+    <text x="362" y="576" class="mono label" fill="#d5d9da">FALKORDB GRAPH</text>
+
+    <text x="700" y="209" class="mono caps" fill="#b7c0c4">CHANGE TRACE <tspan fill="#ff4b57">/</tspan> DEMO 01</text>
+    <path d="M 700 230 H 1512" stroke="#555d62" stroke-width="1.5" stroke-dasharray="4 10"/>
+
+    <!-- Short connectors sit entirely in the gaps between cards. -->
+    <g fill="none" stroke="#ff4b57" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 892 399 H 901 M 1100 399 H 1109 M 1308 399 H 1317" stroke-width="3"/>
+      <path d="M 897 394 L 903 399 L 897 404 M 1105 394 L 1111 399 L 1105 404 M 1313 394 L 1319 399 L 1313 404" stroke-width="2.5"/>
+    </g>
+    <path d="M 794 335 V 303 H 1418 V 335" fill="none" stroke="#657077" stroke-width="1.5" stroke-dasharray="3 11" opacity="0.65"/>
+
+    <g class="mono">
+      <g>
+        <rect x="700" y="346" width="188" height="106" rx="10" fill="#ff4b57" opacity="0.18" filter="url(#softGlow)"/>
+        <rect x="700" y="346" width="188" height="106" rx="10" fill="#191c1e" stroke="#ff4b57" stroke-width="2.5"/>
+        <rect x="707" y="353" width="174" height="92" rx="7" fill="none" stroke="#ff4b57" stroke-opacity="0.25"/>
+        <circle cx="718" cy="371" r="5" fill="#ff4b57"/>
+        <text x="732" y="376" class="label" fill="#ff646e">CHANGED</text>
+        <text x="717" y="418" class="nodeTitle">apply_coupon</text>
+      </g>
+      <g>
+        <rect x="908" y="346" width="188" height="106" rx="10" fill="#191c1e" stroke="url(#cardBorder)" stroke-width="2.5"/>
+        <rect x="915" y="353" width="174" height="92" rx="7" fill="none" stroke="#879198" stroke-opacity="0.16"/>
+        <circle cx="926" cy="371" r="5" fill="#a4afb6"/>
+        <text x="940" y="376" class="label" fill="#aeb8bc">CALLER</text>
+        <text x="925" y="418" class="nodeTitle">calculate_total</text>
+      </g>
+      <g>
+        <rect x="1116" y="346" width="188" height="106" rx="10" fill="#191c1e" stroke="url(#cardBorder)" stroke-width="2.5"/>
+        <rect x="1123" y="353" width="174" height="92" rx="7" fill="none" stroke="#879198" stroke-opacity="0.16"/>
+        <circle cx="1134" cy="371" r="5" fill="#a4afb6"/>
+        <text x="1148" y="376" class="label" fill="#aeb8bc">CALLER</text>
+        <text x="1133" y="418" class="nodeTitle">receipt_total</text>
+      </g>
+      <g>
+        <rect x="1324" y="346" width="188" height="106" rx="10" fill="#ff4b57" opacity="0.16" filter="url(#softGlow)"/>
+        <rect x="1324" y="346" width="188" height="106" rx="10" fill="#191c1e" stroke="#ff4b57" stroke-width="2.5"/>
+        <rect x="1331" y="353" width="174" height="92" rx="7" fill="none" stroke="#ff4b57" stroke-opacity="0.25"/>
+        <circle cx="1342" cy="371" r="5" fill="#ff4b57"/>
+        <text x="1356" y="376" class="label" fill="#ff646e">TEST · FAIL</text>
+        <text x="1341" y="408" class="nodeTitle">receipt_large_</text>
+        <text x="1341" y="430" class="nodeTitle">coupon</text>
+      </g>
+    </g>
+
+    <rect x="700" y="536" width="812" height="68" rx="10" fill="#171b1d" stroke="#424b50" stroke-width="2"/>
+    <circle cx="730" cy="570" r="5" fill="#ff4b57"/>
+    <text x="747" y="576" class="mono" font-size="18" fill="#eff0ed">1 changed function</text>
+    <text x="1033" y="576" class="mono" font-size="18" fill="#778188">/</text>
+    <text x="1062" y="576" class="mono" font-size="18" fill="#eff0ed">7 callers</text>
+    <text x="1227" y="576" class="mono" font-size="18" fill="#778188">/</text>
+    <text x="1256" y="576" class="mono" font-size="18" fill="#eff0ed">3 tests</text>
+
+    <text x="110" y="685" class="mono caps" fill="#7f888d">CONNECTED DATA. EXPLAINABLE REVIEW.</text>
+    <text x="1502" y="685" text-anchor="end" class="mono caps" fill="#7f888d">01 — 04 HOPS</text>
+  </g>
+</svg>
