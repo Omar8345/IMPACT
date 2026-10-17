@@ -37,6 +37,8 @@ the source behind a policy or incident.
 
 ## What you see in the demo
 
+<a href="https://youtu.be/mbj6c4p4VNk"><img src="assets/impact-banner.png" alt="Watch the IMPACT demo" width="640"></a>
+
 [▶ Watch the 2:09 demo on YouTube](https://youtu.be/mbj6c4p4VNk)
 
 [Read the article about how IMPACT works](https://omarcodes.io/IMPACT).
