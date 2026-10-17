@@ -39,6 +39,8 @@ the source behind a policy or incident.
 
 [Watch the 2:09 screen demo](https://cap.so/s/ayymw5gzz6qw9ds).
 
+[Read the article about how IMPACT works](https://omarcodes.io/IMPACT).
+
 `demo_checkout` is a synthetic shop with an intentional one-line coupon bug.
 The agent traces `apply_coupon` through checkout and receipts to three tests.
 When asked to run those tests, it confirms that the two large-coupon cases fail
