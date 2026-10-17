@@ -1,6 +1,6 @@
 # IMPACT — PR impact agent
 
-![IMPACT banner showing a changed function linked through callers to a failing test](assets/impact-banner.png)
+[![IMPACT demo: a changed function linked through callers to a failing test](assets/impact-banner.png)](https://youtu.be/mbj6c4p4VNk)
 
 IMPACT analyzes a Python pull request with a call graph in FalkorDB. It finds
 functions that may be affected by a change, chooses relevant tests, and shows the
@@ -37,9 +37,7 @@ the source behind a policy or incident.
 
 ## What you see in the demo
 
-[![Watch the IMPACT demo on YouTube](https://img.youtube.com/vi/mbj6c4p4VNk/hqdefault.jpg)](https://youtu.be/mbj6c4p4VNk)
-
-[Watch the 2:09 screen demo on YouTube](https://youtu.be/mbj6c4p4VNk).
+[▶ Watch the 2:09 demo on YouTube](https://youtu.be/mbj6c4p4VNk)
 
 [Read the article about how IMPACT works](https://omarcodes.io/IMPACT).
 
