@@ -6,12 +6,16 @@ from repo_parser import parse_repo, parse_diff, changed_functions
 import graph
 import review
 import github_pr
+import company
 
 def cmd_index(a):
     funcs, edges = parse_repo(a.repo)
+    data = company.validate_manifest(a.repo, a.company_file, funcs) if a.company_file else None
     g = graph.connect()
     graph.load(g, funcs, edges)
     print(f"Indexed {len(funcs)} functions and {len(edges)} call edges into FalkorDB.")
+    if data:
+        company.sync(g, data)
 
 def cmd_review(a):
     diff = Path(a.diff_file).read_text(encoding="utf-8") if a.diff_file else subprocess.run(["git", "-C", a.repo, "diff", a.base], capture_output=True, text=True, check=True).stdout
@@ -24,10 +28,12 @@ def cmd_review(a):
     decision = review.llm_decision(changed, diff, impacts, [f.id for f in changed if f.is_test]) if a.llm else None
     run = review.run_selected_tests(a.repo, impacts, direct_tests=[f.id for f in changed if f.is_test], priority_test=decision["priority_test"] if decision else None) if a.run_tests else None
     report = decision["report"] + "\n\n" + review.graph_evidence_section(changed, impacts) if decision else review.deterministic_report(changed, impacts, a.repo, run)
+    context = [company.context(graph.connect(), f.id) for f in changed]
+    report += "\n\n" + company.report(context)
     print(report)
     if a.report:
         Path(a.report).write_text(report + "\n", encoding="utf-8")
-    review.write_html(changed, impacts, a.html, run, decision)
+    review.write_html(changed, impacts, a.html, run, decision, context)
     return report
 
 def cmd_pr(a):
@@ -45,11 +51,16 @@ def cmd_pr(a):
     if a.post_comment:
         github_pr.post_comment(pr, "## IMPACT review\n\n" + report)
 
+def cmd_company(a):
+    item = company.context(graph.connect(), a.function_id)
+    print(company.report([item]))
+
 def main():
     p = argparse.ArgumentParser(description="PR impact agent")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("index")
     s.add_argument("repo")
+    s.add_argument("--company-file")
     s.set_defaults(fn=cmd_index)
     s = sub.add_parser("review")
     s.add_argument("repo")
@@ -67,6 +78,9 @@ def main():
     s.add_argument("--html", default="impact.html")
     s.add_argument("--hops", type=int, default=4)
     s.set_defaults(fn=cmd_pr)
+    s = sub.add_parser("company")
+    s.add_argument("function_id")
+    s.set_defaults(fn=cmd_company)
     a = p.parse_args()
     a.fn(a)
 

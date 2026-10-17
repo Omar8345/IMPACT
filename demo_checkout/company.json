@@ -1,0 +1,33 @@
+{
+  "teams": [
+    {"id": "commerce", "name": "Commerce"},
+    {"id": "payments", "name": "Payments"}
+  ],
+  "people": [
+    {"id": "maya", "name": "Maya Chen", "team": "commerce", "owns": ["shop/pricing.py", "shop/cart.py"]},
+    {"id": "leo", "name": "Leo Park", "team": "payments", "owns": ["shop/checkout.py", "shop/receipts.py"]}
+  ],
+  "knowledge": [
+    {
+      "id": "DEC-14",
+      "kind": "decision",
+      "title": "Coupons never make a cart total negative",
+      "path": "company/discount-decision.md",
+      "functions": ["shop/pricing.py::apply_coupon"]
+    },
+    {
+      "id": "TICKET-231",
+      "kind": "ticket",
+      "title": "Large coupon produces a negative charge",
+      "path": "company/support-ticket.md",
+      "functions": ["shop/pricing.py::apply_coupon", "shop/checkout.py::checkout_cart"]
+    },
+    {
+      "id": "CHAT-07",
+      "kind": "chat",
+      "title": "Commerce and Payments agree on the checkout guard",
+      "path": "company/team-chat.md",
+      "functions": ["shop/pricing.py::apply_coupon", "shop/checkout.py::checkout_cart"]
+    }
+  ]
+}
