@@ -7,6 +7,10 @@ functions that may be affected by a change, chooses relevant tests, and shows th
 call paths that justify its suggestions. The graph is central: the review cannot
 produce its impact paths or test selection without FalkorDB.
 
+> **Verified on a real PR:** On [Requests #6644](https://github.com/psf/requests/pull/6644),
+> IMPACT indexed 645 functions, traced `HTTPAdapter.send` and the PR's test to
+> the changed method, then ran the selected test: **passed**.
+
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
 With `--llm`, an OpenRouter model queries graph tools and prioritizes a changed
@@ -226,12 +230,9 @@ not uploaded. If the PR head changes while it is being fetched, rerun the comman
 Current PR analysis covers functions present in the new checkout; fully deleted
 or renamed functions need a future comparison of both code versions.
 
-For a second example, [Requests PR #6644](https://github.com/psf/requests/pull/6644)
-changes `HTTPAdapter.request_url` and adds a direct test. IMPACT indexed 645
-functions in that repository, found `HTTPAdapter.send` and the new test as
-callers, and ran the selected test successfully after Requests' runtime
-dependencies were installed. This is a small real PR; the checkout demo above
-shows the longer call path and failing tests.
+The Requests example requires the target project's runtime dependencies to run
+its tests. The synthetic checkout demo above shows a longer path and failing
+tests without extra target dependencies.
 
 ## Optional AI graph-tool use with OpenRouter
 
