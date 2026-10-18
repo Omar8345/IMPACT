@@ -21,7 +21,8 @@ produce its impact paths or test selection without FalkorDB.
 > traced the changed function through its callers to three tests, ran them on
 > the PR head (**3 passed**), and linked the relevant owner, decision, and
 > support ticket. [Explore the HTML review](https://omar8345.github.io/IMPACT/checkout-pr/) ·
-> [Read the report](docs/checkout-pr/impact-report.md)
+> [Read the report](docs/checkout-pr/impact-report.md) ·
+> [See IMPACT's comment on the PR](https://github.com/Omar8345/impact-checkout-demo/pull/1#issuecomment-6247371092)
 
 ## What the four runs showed
 
