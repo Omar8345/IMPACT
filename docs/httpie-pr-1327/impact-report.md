@@ -6,6 +6,17 @@ IMPACT indexed 956 Python functions and 876 call edges in the PR checkout.
 The paths below indicate possible impact. The 18 graph-selected test targets expanded to 43 pytest cases. In an isolated
 run, **34 passed and 9 remote-service cases were skipped**; none failed.
 
+## AI review priority
+
+The model called FalkorDB’s `impact_of_change` tool and chose:
+
+- **Inspect first:** `httpie/sessions.py::Session.__init__`
+- **Why:** The edit changes behavior worth checking.
+- **Run first:** `tests/test_sessions.py::test_secure_cookies_on_localhost`
+- **Graph path:** `test_sessions:test_secure_cookies_on_localhost` → `test_sessions:open_session` → `sessions:Session.__init__`
+
+The test outcomes below come from a separate execution of the selected tests.
+
 ## PR impact report
 
 ### `httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure` (lines 9-20)

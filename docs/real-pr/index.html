@@ -115,6 +115,15 @@
         color: var(--muted);
         margin: 8px 0 0 37px;
       }
+      .header-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 11px 0 0 37px;
+        font-size: 11px;
+      }
+      .header-links[hidden] { display: none; }
+      .header-links a { color: var(--ink); text-underline-offset: 3px; }
       .eyebrow {
         font-size: 10px;
         font-weight: 800;
@@ -176,6 +185,49 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
+      .test-panel {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 12px;
+        margin: -10px 0 22px;
+      }
+      .test-panel[hidden] { display: none; }
+      .test-panel summary {
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .test-panel p {
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+        margin: 8px 0;
+      }
+      .test-list { display: grid; gap: 5px; margin-top: 10px; }
+      .test-list button {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 7px 5px;
+        border: 0;
+        border-top: 1px solid var(--line);
+        background: transparent;
+        text-align: left;
+        font-size: 10px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .test-list button:hover { color: var(--accent); }
+      .test-result {
+        flex: none;
+        color: var(--test);
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .test-result.passed { color: var(--pass); }
+      .test-result.failed, .test-result.error { color: var(--accent); }
       .ai-panel {
         padding: 14px;
         border: 1px solid var(--test);
@@ -229,7 +281,7 @@
         overflow-wrap: anywhere;
       }
       .detail-name {
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 800;
         margin-bottom: 6px;
       }
@@ -309,6 +361,87 @@
         background: var(--surface);
         font-size: 10px;
         color: var(--muted);
+      }
+      .result-strip {
+        margin: 0 0 15px;
+        padding: 11px 14px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--pass);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .result-strip[hidden] { display: none; }
+      .browser-dialog {
+        width: min(860px, calc(100vw - 30px));
+        max-height: min(78vh, 760px);
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 20px 70px #0008;
+      }
+      .browser-dialog::backdrop { background: #0009; }
+      .browser-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+      }
+      .browser-head h2 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 17px;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .browser-dialog p { color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .browser-dialog input {
+        width: 100%;
+        padding: 11px 12px;
+        margin: 8px 0 17px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+      }
+      .browser-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+      }
+      .browser-results h3 {
+        grid-column: 1 / -1;
+        margin: 15px 0 3px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      .browser-results button {
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-left: 2px solid var(--call);
+        border-radius: 7px;
+        background: var(--bg);
+        text-align: left;
+        overflow-wrap: anywhere;
+        font-size: 11px;
+      }
+      .browser-results button.change { border-left-color: var(--accent); }
+      .browser-results button.test { border-left-color: var(--test); }
+      .browser-results button:hover { border-color: var(--accent); }
+      .browser-results small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10px;
       }
       .canvas {
         min-height: 520px;
@@ -470,11 +603,17 @@
         </button>
       </div>
       <p>Trace a code change through callers to the tests that exercise it.</p>
+      <nav class="header-links" id="report-links" aria-label="Report links" hidden></nav>
     </header>
     <main>
       <aside>
         <div class="eyebrow">Analysis / summary</div>
         <div class="metric" id="metrics"></div>
+        <details class="test-panel" id="test-panel" hidden>
+          <summary id="test-heading">Selected tests</summary>
+          <p id="test-summary"></p>
+          <div class="test-list" id="test-list"></div>
+        </details>
         <section class="ai-panel" id="ai-panel" hidden>
           <h2>Agent / Review priority</h2>
           <p id="ai-reason"></p>
@@ -499,15 +638,15 @@
         <p class="note">
           <b>What this means</b><br />Call paths show possible impact. A test
           edited in the PR is selected directly even if no static call path
-          reaches it. Violet means not run; green means passed and red means
-          failed.
+          reaches it. Violet means not run, skipped, or partly run; green means
+          passed and red means failed.
         </p>
       </aside>
       <section class="workspace">
         <div class="intro">
           <div>
             <h2>How the change spreads</h2>
-            <p>
+            <p id="graph-intro">
               Follow arrows from changed code to callers. Select a card to
               inspect its path.
             </p>
@@ -526,6 +665,7 @@
           ><span class="step">→ Callers</span
           ><span class="step">→ Tests</span>
         </div>
+        <div class="result-strip" id="result-strip" hidden></div>
         <div class="canvas">
           <svg
             id="graph"
@@ -535,6 +675,16 @@
         </div>
       </section>
     </main>
+    <dialog class="browser-dialog" id="path-browser" aria-labelledby="path-browser-title">
+      <div class="browser-head">
+        <h2 id="path-browser-title">Browse paths</h2>
+        <button class="control" id="path-browser-close" type="button">Close</button>
+      </div>
+      <p>Choose any changed function, caller, or test. The graph will show its path.</p>
+      <label for="path-search" class="eyebrow">Find a function or test</label>
+      <input id="path-search" type="search" placeholder="Search names or files" autocomplete="off" />
+      <div class="browser-results" id="path-results"></div>
+    </dialog>
     <script>
       const root = document.documentElement,
         themeButton = document.getElementById("theme-toggle");
@@ -560,7 +710,22 @@
       themeButton.addEventListener("click", () =>
         setTheme(root.dataset.theme === "dark" ? "light" : "dark"),
       );
-      const data = {"nodes": [{"id": "src/requests/adapters.py::HTTPAdapter.request_url", "file": "adapters.py", "name": "HTTPAdapter.request_url", "kind": "change", "changed": true, "depth": 0, "path": ["src/requests/adapters.py::HTTPAdapter.request_url"]}, {"id": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "file": "test_adapters.py", "name": "test_request_url_trims_leading_path_separators", "kind": "test", "changed": true, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "tests/test_adapters.py::test_request_url_trims_leading_path_separators"], "status": "passed"}, {"id": "src/requests/adapters.py::HTTPAdapter.send", "file": "adapters.py", "name": "HTTPAdapter.send", "kind": "function", "changed": false, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "src/requests/adapters.py::HTTPAdapter.send"]}], "edges": [{"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "src/requests/adapters.py::HTTPAdapter.send"}, {"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"}], "ai": null, "company": []};
+      const data = {"nodes": [{"id": "src/requests/adapters.py::HTTPAdapter.request_url", "file": "adapters.py", "name": "HTTPAdapter.request_url", "kind": "change", "changed": true, "depth": 0, "path": ["src/requests/adapters.py::HTTPAdapter.request_url"]}, {"id": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "file": "test_adapters.py", "name": "test_request_url_trims_leading_path_separators", "kind": "test", "changed": true, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "tests/test_adapters.py::test_request_url_trims_leading_path_separators"], "status": "passed"}, {"id": "src/requests/adapters.py::HTTPAdapter.send", "file": "adapters.py", "name": "HTTPAdapter.send", "kind": "function", "changed": false, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "src/requests/adapters.py::HTTPAdapter.send"]}], "edges": [{"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "src/requests/adapters.py::HTTPAdapter.send"}, {"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"}], "ai": {"focus": "src/requests/adapters.py::HTTPAdapter.request_url", "priority_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "reason": "The edit may affect a boundary case."}, "company": [], "case_summary": "1 case passed", "links": [{"label": "Source PR \u2197", "href": "https://github.com/psf/requests/pull/6644"}, {"label": "Full Markdown report \u2197", "href": "impact-report.md"}]};
+      if (data.case_summary) {
+        const strip = document.getElementById("result-strip");
+        strip.textContent = "Observed test run: " + data.case_summary;
+        strip.hidden = false;
+      }
+      if (Array.isArray(data.links) && data.links.length) {
+        const links = document.getElementById("report-links");
+        data.links.forEach((entry) => {
+          const anchor = document.createElement("a");
+          anchor.href = entry.href;
+          anchor.textContent = entry.label;
+          links.appendChild(anchor);
+        });
+        links.hidden = false;
+      }
       if (data.company && data.company.length) {
         document.getElementById("company-panel").hidden = false;
         const evidence = document.getElementById("company-evidence");
@@ -614,16 +779,23 @@
         svg = document.getElementById("graph");
       const byId = Object.fromEntries(data.nodes.map((n) => [n.id, n]));
       const maxDepth = Math.max(0, ...data.nodes.map((n) => n.depth));
-      const levels = Array.from({ length: maxDepth + 1 }, (_, d) =>
-        data.nodes
-          .filter((n) => n.depth === d)
-          .sort((a, b) => a.id.localeCompare(b.id)),
-      );
-      let edgeEls = [], nodeEls = {}, selectedId = null, focused = false;
+      let edgeEls = [], nodeEls = {}, selectedId = null;
+      const largeGraph = data.nodes.length > 16;
+      let focused = largeGraph;
       function renderGraph() {
         svg.replaceChildren();
         edgeEls = [];
         nodeEls = {};
+        const path = byId[selectedId]?.path || [];
+        const visibleIds = focused ? new Set(path) : null;
+        const visibleNodes = focused
+          ? data.nodes.filter((n) => visibleIds.has(n.id))
+          : data.nodes;
+        const levels = Array.from({ length: maxDepth + 1 }, (_, d) =>
+          visibleNodes
+            .filter((n) => n.depth === d)
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        );
         const widest = Math.max(1, ...levels.map((l) => l.length));
         const canvasWidth = svg.parentElement.clientWidth;
         const requiredWidth = widest * 260 + (widest - 1) * 24 + 70;
@@ -664,7 +836,9 @@
           parent.appendChild(e);
           return e;
         }
-        data.edges.forEach((edge, index) => {
+        data.edges.filter((edge) =>
+          !focused || (visibleIds.has(edge.from) && visibleIds.has(edge.to))
+        ).forEach((edge, index) => {
           const a = pos[edge.from],
             b = pos[edge.to];
           if (!a || !b) return;
@@ -701,7 +875,7 @@
             second.length > 27 ? second.slice(0, 26) + "…" : second,
           ];
         }
-        data.nodes.forEach((n) => {
+        visibleNodes.forEach((n) => {
           const p = pos[n.id],
             g = el("g", {
               class:
@@ -750,6 +924,10 @@
                   ? "CHANGED TEST" +
                     (n.status === "passed"
                       ? " · PASS"
+                      : n.status === "partial"
+                        ? " · PARTIAL"
+                      : n.status === "skipped"
+                        ? " · SKIP"
                       : n.status === "failed"
                         ? " · FAIL"
                         : n.status === "error"
@@ -757,6 +935,10 @@
                           : "")
                   : n.status === "passed"
                     ? "TEST · PASS"
+                    : n.status === "partial"
+                      ? "TEST · PARTIAL"
+                    : n.status === "skipped"
+                      ? "TEST · SKIP"
                     : n.status === "failed"
                       ? "TEST · FAIL"
                       : n.status === "error"
@@ -799,11 +981,78 @@
       document.getElementById("metrics").innerHTML =
         `<div><strong>${affected}</strong><span>reachable nodes</span></div><div><strong>${tests}</strong><span>selected tests</span></div><div><strong>${maxDepth}</strong><span>maximum call steps</span></div><div><strong>${data.nodes.filter((n) => n.kind === "change").length}</strong><span>changed functions</span></div>`;
       const focusButton = document.getElementById("focus-toggle");
+      const pathBrowser = document.getElementById("path-browser");
+      const pathSearch = document.getElementById("path-search");
+      const pathResults = document.getElementById("path-results");
+      const browseGroups = [
+        ["Changed functions", (n) => n.kind === "change"],
+        ["Changed tests", (n) => n.kind === "test" && n.changed],
+        ["Callers", (n) => n.kind === "function"],
+        ["Other selected tests", (n) => n.kind === "test" && !n.changed],
+      ];
+      function renderPathBrowser() {
+        const query = pathSearch.value.trim().toLowerCase();
+        pathResults.replaceChildren();
+        browseGroups.forEach(([title, matches]) => {
+          const items = data.nodes.filter((n) =>
+            matches(n) && (!query || n.id.toLowerCase().includes(query))
+          ).sort((a, b) => a.id.localeCompare(b.id));
+          if (!items.length) return;
+          const heading = document.createElement("h3");
+          heading.textContent = `${title} (${items.length})`;
+          pathResults.appendChild(heading);
+          items.forEach((n) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = n.kind;
+            const name = document.createElement("strong");
+            name.textContent = n.name;
+            const detail = document.createElement("small");
+            detail.textContent = n.file + (n.status ? ` · ${n.status}` : "");
+            button.append(name, detail);
+            button.addEventListener("click", () => {
+              selectedId = n.id;
+              renderGraph();
+              pathBrowser.close();
+            });
+            pathResults.appendChild(button);
+          });
+        });
+        if (!pathResults.childElementCount) {
+          const empty = document.createElement("p");
+          empty.textContent = "No matching paths.";
+          pathResults.appendChild(empty);
+        }
+      }
+      pathSearch.addEventListener("input", renderPathBrowser);
+      document.getElementById("path-browser-close").addEventListener("click", () =>
+        pathBrowser.close()
+      );
+      function updateFocusControl() {
+        if (largeGraph) {
+          focusButton.removeAttribute("aria-pressed");
+          focusButton.textContent = "Browse paths";
+          document.getElementById("graph-intro").textContent =
+            "One path is shown at a time. Browse paths or choose a test in the sidebar.";
+        } else {
+          focusButton.setAttribute("aria-pressed", String(focused));
+          focusButton.textContent = focused ? "Show all paths" : "Focus path";
+          document.getElementById("graph-intro").textContent = focused
+            ? "One path is shown. Choose a test in the sidebar or show all paths."
+            : "Follow arrows from changed code to callers. Select a card to inspect its path.";
+        }
+      }
       focusButton.addEventListener("click", () => {
+        if (largeGraph) {
+          pathSearch.value = "";
+          renderPathBrowser();
+          pathBrowser.showModal();
+          pathSearch.focus();
+          return;
+        }
         focused = !focused;
-        svg.classList.toggle("focused", focused);
-        focusButton.setAttribute("aria-pressed", String(focused));
-        focusButton.textContent = focused ? "Show all paths" : "Focus path";
+        updateFocusControl();
+        renderGraph();
       });
       function select(id) {
         selectedId = id;
@@ -866,12 +1115,46 @@
           detail.appendChild(line);
         });
       }
+      const selectedTests = data.nodes
+        .filter((n) => n.kind === "test")
+        .sort((a, b) => a.id.localeCompare(b.id));
+      if (selectedTests.length) {
+        const panel = document.getElementById("test-panel");
+        panel.hidden = false;
+        document.getElementById("test-heading").textContent =
+          `Selected tests (${selectedTests.length})`;
+        const counts = {};
+        selectedTests.forEach((n) => {
+          const status = n.status || "not run";
+          counts[status] = (counts[status] || 0) + 1;
+          const button = document.createElement("button");
+          button.type = "button";
+          const result = document.createElement("span");
+          result.className = `test-result ${n.status || ""}`;
+          result.textContent = status;
+          const name = document.createElement("span");
+          name.textContent = n.name;
+          button.append(result, name);
+          button.title = n.id;
+          button.addEventListener("click", () => {
+            selectedId = n.id;
+            if (focused) renderGraph();
+            else select(n.id);
+          });
+          document.getElementById("test-list").appendChild(button);
+        });
+        document.getElementById("test-summary").textContent =
+          Object.entries(counts).map(([status, count]) => `${count} ${status}`).join(" · ") +
+          (data.case_summary ? ` — ${data.case_summary}` : "");
+      }
       const initial =
         (data.ai && data.nodes.find((n) => pytestId(n.id) === data.ai.priority_test)) ||
+        data.nodes.find((n) => n.kind === "test" && n.changed && n.path.length > 1) ||
         data.nodes
           .filter((n) => n.kind === "test")
           .sort((a, b) => b.depth - a.depth)[0] || data.nodes[0];
       if (initial) selectedId = initial.id;
+      updateFocusControl();
       renderGraph();
       let lastCanvasWidth = svg.parentElement.clientWidth;
       new ResizeObserver(() => {
