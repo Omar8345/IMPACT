@@ -1,11 +1,21 @@
 # IMPACT — PR impact agent
 
+[![Reproduce IMPACT evaluation](https://github.com/Omar8345/IMPACT/actions/workflows/evaluation.yml/badge.svg)](https://github.com/Omar8345/IMPACT/actions/workflows/evaluation.yml)
+
 [![IMPACT demo: a changed function linked through callers to a failing test](assets/impact-banner.png)](https://youtu.be/mbj6c4p4VNk)
 
 IMPACT analyzes a Python pull request with a call graph in FalkorDB. It finds
 functions that may be affected by a change, chooses relevant tests, and shows the
 call paths that justify its suggestions. The graph is central: the review cannot
 produce its impact paths or test selection without FalkorDB.
+
+> **Reproducible test-selection evaluation:** Across 15 controlled mutations and
+> 24 tests, IMPACT selected all **29/29 failure-revealing test instances** while
+> avoiding **69.2% of full-suite test executions**. Filename matching found 58.6%;
+> direct callers found 55.2%. [Explore the results](https://omar8345.github.io/IMPACT/evaluation/) ·
+> [Read the method and limitations](docs/evaluation.md) ·
+> [Inspect the raw JSON](evaluation/results.json) ·
+> [Review the benchmark code](evaluation/run.py)
 
 > **Larger real PR:** On [HTTPie #1327](https://github.com/httpie/cli/pull/1327),
 > IMPACT indexed 956 functions from an application PR spanning 9 files. From a
@@ -35,9 +45,11 @@ produce its impact paths or test selection without FalkorDB.
 | [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/) | 1 | 1 passed | Run the broader test suite |
 | [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/) | 18 targets, 43 cases | 34 passed, 9 remote cases skipped | Run the skipped cases with the required service |
 
-These are four case studies, not an accuracy benchmark. Test outcomes come
-from actual runs; the AI's review priorities and next steps are shown alongside
-them. The coupon fix is a proposal, not an applied or verified patch.
+These four case studies show the workflow on synthetic and public repositories.
+The separate controlled evaluation above measures test-selection behavior.
+Test outcomes come from actual runs; the AI's review priorities and next steps
+are shown alongside them. The coupon fix is a proposal, not an applied or
+verified patch.
 
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IMPACT — Real PR examples</title>
+  <title>IMPACT — Evidence and examples</title>
   <style>
     :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     * { box-sizing: border-box; }
@@ -24,14 +24,21 @@
 </head>
 <body>
   <main>
-    <div class="eyebrow">IMPACT / PUBLIC PR EXAMPLE</div>
-    <h1>Real PRs.<br>Visible impact.</h1>
+    <div class="eyebrow">IMPACT / EVIDENCE</div>
+    <h1>Graph paths.<br>Measured impact.</h1>
+    <p><strong>Controlled evaluation:</strong> IMPACT found all 29/29
+      failure-revealing test instances across 15 independent mutations while
+      avoiding 69.2% of full-suite test executions.</p>
+    <nav aria-label="Evaluation">
+      <a href="evaluation/">Explore the evaluation →</a>
+      <a href="evaluation.md">Read the method →</a>
+    </nav>
     <p><strong><a href="https://github.com/httpie/cli/pull/1327">HTTPie PR #1327</a></strong>
       changes secure-cookie behavior across 9 files.
       IMPACT found 21 possible callers of a changed constructor, including 13
       relevant tests. The selected run produced <strong>34 passed cases</strong>
       and 9 skipped remote-service cases.</p>
-    <nav aria-label="Reports">
+    <nav aria-label="Case studies">
       <a href="httpie-pr-1327/">Explore the HTTPie review →</a>
       <a href="https://github.com/Omar8345/IMPACT/blob/master/docs/httpie-pr-1327/impact-report.md">Read the HTTPie report →</a>
     </nav>

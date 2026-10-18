@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Reproducible IMPACT test-selection benchmark">
+  <title>IMPACT · Evaluation</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0d0f10; --panel:#151819; --line:#303537;
+      --text:#f4f4f0; --muted:#989f9f; --red:#ff4f61; --green:#58d1a5; }
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    body:before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.14;
+      background-image:radial-gradient(#778 1px,transparent 1px); background-size:22px 22px; }
+    main { position:relative; width:min(1120px,calc(100% - 32px)); margin:auto; padding:64px 0 80px; }
+    .eyebrow { color:var(--red); letter-spacing:.18em; font-size:12px; font-weight:800; text-transform:uppercase; }
+    h1 { max-width:850px; margin:15px 0 14px; font:800 clamp(38px,7vw,76px)/.98 ui-sans-serif,system-ui; letter-spacing:-.055em; }
+    .lede { max-width:760px; color:#c2c7c6; font-size:17px; }
+    .hero { border-bottom:1px solid var(--line); padding-bottom:42px; }
+    .headline { display:flex; gap:18px; flex-wrap:wrap; margin-top:30px; }
+    .headline div { border-left:2px solid var(--red); padding:5px 18px; }
+    .headline strong { display:block; font-size:28px; } .headline small { color:var(--muted); }
+    h2 { margin:48px 0 18px; font:700 25px/1.2 ui-sans-serif,system-ui; }
+    .methods { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .method { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; }
+    .method.featured { border-color:var(--red); box-shadow:inset 0 0 0 1px #ff4f6144; }
+    .method span,.method small { display:block; color:var(--muted); }
+    .method strong { display:block; margin:12px 0 0; font:800 34px/1 ui-sans-serif,system-ui; }
+    .method div { margin-top:18px; border-top:1px solid var(--line); padding-top:12px; }
+    .method.featured span,.method.featured strong { color:var(--red); }
+    .note { margin-top:14px; padding:16px 18px; border:1px solid var(--line); background:#111314; color:#bbc0bf; }
+    table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); }
+    th,td { padding:14px 16px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-size:11px; letter-spacing:.09em; text-transform:uppercase; }
+    td small { display:block; margin-top:4px; color:var(--muted); } code { color:#fff; }
+    .pass { color:var(--green); font-weight:800; }
+    a { color:var(--red); } footer { margin-top:30px; color:var(--muted); }
+    @media (max-width:800px) { .methods { grid-template-columns:1fr 1fr; } table { font-size:12px; } }
+    @media (max-width:520px) { .methods { grid-template-columns:1fr; } th:nth-child(2),td:nth-child(2) { display:none; } }
+  </style>
+</head>
+<body><main>
+  <section class="hero">
+    <div class="eyebrow">Graph intelligence / evaluation 001</div>
+    <h1>Does the graph pick the tests that expose the bug?</h1>
+    <p class="lede">Every mutation runs alone. The complete pytest suite establishes ground truth. Then filename matching, direct callers, and IMPACT compete to select the failure-revealing tests.</p>
+    <div class="headline">
+      <div><strong>15</strong><small>controlled mutations</small></div>
+      <div><strong>24</strong><small>tests in the fixture</small></div>
+      <div><strong>29/29</strong><small>failures found by IMPACT</small></div>
+      <div><strong>69.2%</strong><small>fewer test executions</small></div>
+    </div>
+  </section>
+  <h2>Selection methods</h2>
+  <section class="methods">
+          <article class="method">
+            <span>Filename match</span>
+            <strong>58.6%</strong>
+            <small>failure recall</small>
+            <div><b>80.0%</b> fewer runs</div>
+          </article>
+          <article class="method">
+            <span>Direct callers</span>
+            <strong>55.2%</strong>
+            <small>failure recall</small>
+            <div><b>91.4%</b> fewer runs</div>
+          </article>
+          <article class="method featured">
+            <span>IMPACT · FalkorDB</span>
+            <strong>100.0%</strong>
+            <small>failure recall</small>
+            <div><b>69.2%</b> fewer runs</div>
+          </article>
+          <article class="method">
+            <span>Full suite</span>
+            <strong>100.0%</strong>
+            <small>failure recall</small>
+            <div><b>0.0%</b> fewer runs</div>
+          </article></section>
+  <div class="note"><b>Read this precisely.</b> Failure recall counts tests that failed or errored in the full run and were also selected. A selected passing test can still cover relevant behavior, so failure yield is not general relevance precision.</div>
+  <h2>Every mutation</h2>
+  <table><thead><tr><th>Injected defect</th><th>Full-suite failures</th><th>IMPACT selected</th><th>Failure recall</th></tr></thead>
+  <tbody>
+          <tr>
+            <td><code>coupon_cap_removed</code><small>An oversized coupon is no longer capped at the subtotal.</small></td>
+            <td>4</td>
+            <td>11 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>negative_coupon_accepted</code><small>A negative coupon increases the amount charged.</small></td>
+            <td>1</td>
+            <td>11 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>quantity_ignored</code><small>Line pricing ignores item quantity.</small></td>
+            <td>6</td>
+            <td>10 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>zero_quantity_charged</code><small>An empty line item is charged as one item.</small></td>
+            <td>1</td>
+            <td>10 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>negative_quantity_allowed</code><small>A quantity of minus one bypasses validation.</small></td>
+            <td>1</td>
+            <td>10 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>percentage_rounding_changed</code><small>Percentage discounts round down instead of to the nearest cent.</small></td>
+            <td>1</td>
+            <td>8 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>combined_discount_dropped</code><small>Order pricing silently ignores percentage discounts.</small></td>
+            <td>1</td>
+            <td>7 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>tax_rounding_changed</code><small>Tax rounds down instead of to the nearest cent.</small></td>
+            <td>1</td>
+            <td>8 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>shipping_threshold_exclusive</code><small>Orders exactly at the free-shipping threshold are charged.</small></td>
+            <td>1</td>
+            <td>9 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>shipping_fee_increased</code><small>Paid shipping changes without its callers being updated.</small></td>
+            <td>5</td>
+            <td>9 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>exact_stock_rejected</code><small>An order using the final unit of stock is rejected.</small></td>
+            <td>1</td>
+            <td>5 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>reserve_does_not_decrement</code><small>A successful reservation leaves inventory unchanged.</small></td>
+            <td>2</td>
+            <td>4 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>tax_omitted_from_order</code><small>Checkout omits tax from the order total.</small></td>
+            <td>2</td>
+            <td>6 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>receipt_decimal_shift</code><small>Receipt formatting moves the decimal point.</small></td>
+            <td>1</td>
+            <td>1 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><code>refund_cap_removed</code><small>Refunds can exceed the amount originally paid.</small></td>
+            <td>1</td>
+            <td>2 / 24</td>
+            <td><span class="pass">100%</span></td>
+          </tr></tbody></table>
+  <footer>Controlled static-analysis benchmark · synthetic fixture · no LLM used · <a href="../evaluation.md">method and limitations</a> · <a href="results.json">raw JSON</a></footer>
+</main></body></html>

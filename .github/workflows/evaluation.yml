@@ -1,0 +1,38 @@
+name: Reproduce IMPACT evaluation
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    services:
+      falkordb:
+        image: falkordb/falkordb:latest-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      FALKORDB_HOST: 127.0.0.1
+      FALKORDB_PORT: 6379
+      FALKORDB_GRAPH: impact_evaluation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Run project tests
+        run: python -m pytest -q tests
+      - name: Reproduce benchmark
+        run: python evaluation/run.py
+      - name: Confirm committed results are current
+        run: git diff --exit-code -- evaluation/results.json docs/evaluation.md docs/evaluation/index.html docs/evaluation/results.json

@@ -1,0 +1,695 @@
+{
+  "schema_version": 1,
+  "fixture": {
+    "scenarios": 15,
+    "tests": 24,
+    "max_hops": 4,
+    "ground_truth": "Failing or erroring tests from a full pytest run for each mutation."
+  },
+  "methods": {
+    "filename": "Tests with a filename matching the changed production module.",
+    "direct_callers": "Test functions one static call edge from the changed function.",
+    "impact": "Tests connected by a FalkorDB CALLS path of 1 to 4 hops.",
+    "all_tests": "Every collected test; the ground-truth reference."
+  },
+  "aggregate": {
+    "filename": {
+      "selected_test_runs": 72,
+      "detected_failures": 17,
+      "total_failures": 29,
+      "failure_recall": 0.5862,
+      "test_reduction": 0.8,
+      "failure_yield": 0.2361
+    },
+    "direct_callers": {
+      "selected_test_runs": 31,
+      "detected_failures": 16,
+      "total_failures": 29,
+      "failure_recall": 0.5517,
+      "test_reduction": 0.9139,
+      "failure_yield": 0.5161
+    },
+    "impact": {
+      "selected_test_runs": 111,
+      "detected_failures": 29,
+      "total_failures": 29,
+      "failure_recall": 1.0,
+      "test_reduction": 0.6917,
+      "failure_yield": 0.2613
+    },
+    "all_tests": {
+      "selected_test_runs": 360,
+      "detected_failures": 29,
+      "total_failures": 29,
+      "failure_recall": 1.0,
+      "test_reduction": 0.0,
+      "failure_yield": 0.0806
+    }
+  },
+  "scenarios": [
+    {
+      "number": 1,
+      "id": "coupon_cap_removed",
+      "description": "An oversized coupon is no longer capped at the subtotal.",
+      "changed_functions": [
+        "store/pricing.py::clamp_coupon"
+      ],
+      "failing_tests": [
+        "tests/test_orders.py::test_checkout_large_coupon_never_negative",
+        "tests/test_pricing.py::test_coupon_cannot_exceed_subtotal",
+        "tests/test_receipts.py::test_receipt_large_coupon",
+        "tests/test_refunds.py::test_refund_is_capped_at_paid_amount"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 0.25,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 0.25,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 11,
+          "detected_failures": 4,
+          "failure_recall": 1.0,
+          "test_reduction": 0.5417,
+          "failure_yield": 0.3636
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 4,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.1667
+        }
+      }
+    },
+    {
+      "number": 2,
+      "id": "negative_coupon_accepted",
+      "description": "A negative coupon increases the amount charged.",
+      "changed_functions": [
+        "store/pricing.py::clamp_coupon"
+      ],
+      "failing_tests": [
+        "tests/test_pricing.py::test_negative_coupon_is_ignored"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 11,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.5417,
+          "failure_yield": 0.0909
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 3,
+      "id": "quantity_ignored",
+      "description": "Line pricing ignores item quantity.",
+      "changed_functions": [
+        "store/pricing.py::line_total"
+      ],
+      "failing_tests": [
+        "tests/test_orders.py::test_large_order_gets_free_shipping",
+        "tests/test_orders.py::test_order_includes_tax_and_shipping",
+        "tests/test_pricing.py::test_discounted_subtotal_combines_discounts",
+        "tests/test_pricing.py::test_line_total_allows_zero_quantity",
+        "tests/test_pricing.py::test_line_total_uses_quantity",
+        "tests/test_receipts.py::test_receipt_uses_order_total"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 3,
+          "failure_recall": 0.5,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.4286
+        },
+        "direct_callers": {
+          "selected": 3,
+          "detected_failures": 2,
+          "failure_recall": 0.3333,
+          "test_reduction": 0.875,
+          "failure_yield": 0.6667
+        },
+        "impact": {
+          "selected": 10,
+          "detected_failures": 6,
+          "failure_recall": 1.0,
+          "test_reduction": 0.5833,
+          "failure_yield": 0.6
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 6,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.25
+        }
+      }
+    },
+    {
+      "number": 4,
+      "id": "zero_quantity_charged",
+      "description": "An empty line item is charged as one item.",
+      "changed_functions": [
+        "store/pricing.py::line_total"
+      ],
+      "failing_tests": [
+        "tests/test_pricing.py::test_line_total_allows_zero_quantity"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "impact": {
+          "selected": 10,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.5833,
+          "failure_yield": 0.1
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 5,
+      "id": "negative_quantity_allowed",
+      "description": "A quantity of minus one bypasses validation.",
+      "changed_functions": [
+        "store/pricing.py::line_total"
+      ],
+      "failing_tests": [
+        "tests/test_pricing.py::test_line_total_rejects_negative_quantity"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "impact": {
+          "selected": 10,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.5833,
+          "failure_yield": 0.1
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 6,
+      "id": "percentage_rounding_changed",
+      "description": "Percentage discounts round down instead of to the nearest cent.",
+      "changed_functions": [
+        "store/pricing.py::percentage_discount"
+      ],
+      "failing_tests": [
+        "tests/test_pricing.py::test_percentage_discount_rounds_to_cent"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 1,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9583,
+          "failure_yield": 1.0
+        },
+        "impact": {
+          "selected": 8,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.6667,
+          "failure_yield": 0.125
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 7,
+      "id": "combined_discount_dropped",
+      "description": "Order pricing silently ignores percentage discounts.",
+      "changed_functions": [
+        "store/pricing.py::discounted_subtotal"
+      ],
+      "failing_tests": [
+        "tests/test_pricing.py::test_discounted_subtotal_combines_discounts"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "direct_callers": {
+          "selected": 1,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9583,
+          "failure_yield": 1.0
+        },
+        "impact": {
+          "selected": 7,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7083,
+          "failure_yield": 0.1429
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 8,
+      "id": "tax_rounding_changed",
+      "description": "Tax rounds down instead of to the nearest cent.",
+      "changed_functions": [
+        "store/tax.py::tax_cents"
+      ],
+      "failing_tests": [
+        "tests/test_tax.py::test_tax_rounds_to_nearest_cent"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 8,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.6667,
+          "failure_yield": 0.125
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 9,
+      "id": "shipping_threshold_exclusive",
+      "description": "Orders exactly at the free-shipping threshold are charged.",
+      "changed_functions": [
+        "store/shipping.py::shipping_fee"
+      ],
+      "failing_tests": [
+        "tests/test_shipping.py::test_shipping_is_free_at_threshold"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "direct_callers": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "impact": {
+          "selected": 9,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.625,
+          "failure_yield": 0.1111
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 10,
+      "id": "shipping_fee_increased",
+      "description": "Paid shipping changes without its callers being updated.",
+      "changed_functions": [
+        "store/shipping.py::shipping_fee"
+      ],
+      "failing_tests": [
+        "tests/test_orders.py::test_checkout_large_coupon_never_negative",
+        "tests/test_orders.py::test_order_includes_tax_and_shipping",
+        "tests/test_receipts.py::test_receipt_large_coupon",
+        "tests/test_receipts.py::test_receipt_uses_order_total",
+        "tests/test_shipping.py::test_shipping_below_threshold"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 0.2,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "direct_callers": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 0.2,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "impact": {
+          "selected": 9,
+          "detected_failures": 5,
+          "failure_recall": 1.0,
+          "test_reduction": 0.625,
+          "failure_yield": 0.5556
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 5,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.2083
+        }
+      }
+    },
+    {
+      "number": 11,
+      "id": "exact_stock_rejected",
+      "description": "An order using the final unit of stock is rejected.",
+      "changed_functions": [
+        "store/inventory.py::Inventory.available"
+      ],
+      "failing_tests": [
+        "tests/test_inventory.py::test_exact_stock_is_available"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "direct_callers": {
+          "selected": 1,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9583,
+          "failure_yield": 1.0
+        },
+        "impact": {
+          "selected": 5,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.7917,
+          "failure_yield": 0.2
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 12,
+      "id": "reserve_does_not_decrement",
+      "description": "A successful reservation leaves inventory unchanged.",
+      "changed_functions": [
+        "store/inventory.py::Inventory.reserve"
+      ],
+      "failing_tests": [
+        "tests/test_inventory.py::test_reserve_reduces_stock",
+        "tests/test_orders.py::test_checkout_reserves_inventory"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 0.5,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 0.5,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 4,
+          "detected_failures": 2,
+          "failure_recall": 1.0,
+          "test_reduction": 0.8333,
+          "failure_yield": 0.5
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 2,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0833
+        }
+      }
+    },
+    {
+      "number": 13,
+      "id": "tax_omitted_from_order",
+      "description": "Checkout omits tax from the order total.",
+      "changed_functions": [
+        "store/orders.py::price_order"
+      ],
+      "failing_tests": [
+        "tests/test_orders.py::test_order_includes_tax_and_shipping",
+        "tests/test_receipts.py::test_receipt_uses_order_total"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 4,
+          "detected_failures": 1,
+          "failure_recall": 0.5,
+          "test_reduction": 0.8333,
+          "failure_yield": 0.25
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 0.5,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 6,
+          "detected_failures": 2,
+          "failure_recall": 1.0,
+          "test_reduction": 0.75,
+          "failure_yield": 0.3333
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 2,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0833
+        }
+      }
+    },
+    {
+      "number": 14,
+      "id": "receipt_decimal_shift",
+      "description": "Receipt formatting moves the decimal point.",
+      "changed_functions": [
+        "store/receipts.py::format_total"
+      ],
+      "failing_tests": [
+        "tests/test_receipts.py::test_receipt_formats_cents"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 3,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.875,
+          "failure_yield": 0.3333
+        },
+        "direct_callers": {
+          "selected": 1,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9583,
+          "failure_yield": 1.0
+        },
+        "impact": {
+          "selected": 1,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9583,
+          "failure_yield": 1.0
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    },
+    {
+      "number": 15,
+      "id": "refund_cap_removed",
+      "description": "Refunds can exceed the amount originally paid.",
+      "changed_functions": [
+        "store/refunds.py::refund_amount"
+      ],
+      "failing_tests": [
+        "tests/test_refunds.py::test_refund_is_capped_at_paid_amount"
+      ],
+      "total_tests": 24,
+      "methods": {
+        "filename": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "direct_callers": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "impact": {
+          "selected": 2,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.9167,
+          "failure_yield": 0.5
+        },
+        "all_tests": {
+          "selected": 24,
+          "detected_failures": 1,
+          "failure_recall": 1.0,
+          "test_reduction": 0.0,
+          "failure_yield": 0.0417
+        }
+      }
+    }
+  ]
+}
