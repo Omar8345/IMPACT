@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PR Impact Explorer</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f5f2;
+        --surface: #fff;
+        --ink: #151515;
+        --muted: #62666c;
+        --line: #d8d8d3;
+        --dots: #deded9;
+        --accent: #d92332;
+        --accent-soft: #fcecee;
+        --test: #7067b5;
+        --pass: #298261;
+        --call: #78838e;
+        --edge: #b7bdc2;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: var(--ink);
+        background: var(--bg);
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #101112;
+        --surface: #191a1c;
+        --ink: #f3f3ef;
+        --muted: #a5a7a8;
+        --line: #393b3e;
+        --dots: #2b2d30;
+        --accent: #ff4b57;
+        --accent-soft: #342025;
+        --test: #afa2ff;
+        --pass: #4ec69a;
+        --call: #a6b0b9;
+        --edge: #575d64;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(var(--dots) 0.7px, transparent 0.7px) 0 0/16px 16px,
+          var(--bg);
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      button:focus-visible,
+      .node:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+      header {
+        padding: 21px 30px 18px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        position: relative;
+      }
+      header:after {
+        content: "";
+        height: 2px;
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        background: linear-gradient(
+          90deg,
+          var(--accent) 0 22%,
+          transparent 22% 26%,
+          var(--line) 26% 100%
+        );
+      }
+      .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+      }
+      .brand-mark {
+        display: grid;
+        grid-template-columns: repeat(3, 5px);
+        gap: 3px;
+      }
+      .brand-mark i {
+        width: 5px;
+        height: 5px;
+        background: var(--accent);
+        border-radius: 50%;
+      }
+      .brand-mark i:nth-child(2),
+      .brand-mark i:nth-child(6) {
+        opacity: 0.35;
+      }
+      header h1 {
+        font-size: 25px;
+        letter-spacing: -0.055em;
+        margin: 0;
+        font-weight: 850;
+      }
+      header p {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 8px 0 0 37px;
+      }
+      .header-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 11px 0 0 37px;
+        font-size: 11px;
+      }
+      .header-links[hidden] { display: none; }
+      .header-links a { color: var(--ink); text-underline-offset: 3px; }
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--accent);
+        text-transform: uppercase;
+      }
+      .control {
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background:
+          linear-gradient(var(--surface), var(--surface)) padding-box,
+          linear-gradient(130deg, var(--accent), var(--line) 55%) border-box;
+        padding: 10px 13px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .control:hover {
+        background: var(--accent-soft);
+      }
+      .control[aria-pressed="true"] {
+        color: var(--accent);
+      }
+      main {
+        display: grid;
+        grid-template-columns: 310px minmax(0, 1fr);
+        min-height: calc(100vh - 99px);
+      }
+      aside {
+        padding: 26px 22px;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+      }
+      .metric {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin: 17px 0 28px;
+      }
+      .metric div {
+        padding: 13px 12px;
+        min-height: 77px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background:
+          linear-gradient(var(--surface), var(--surface)) padding-box,
+          linear-gradient(145deg, var(--accent), var(--line) 38%) border-box;
+      }
+      .metric strong {
+        display: block;
+        font-size: 24px;
+        letter-spacing: -0.07em;
+      }
+      .metric span {
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .test-panel {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 12px;
+        margin: -10px 0 22px;
+      }
+      .test-panel[hidden] { display: none; }
+      .test-panel summary {
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .test-panel p {
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+        margin: 8px 0;
+      }
+      .test-list { display: grid; gap: 5px; margin-top: 10px; }
+      .test-list button {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 7px 5px;
+        border: 0;
+        border-top: 1px solid var(--line);
+        background: transparent;
+        text-align: left;
+        font-size: 10px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .test-list button:hover { color: var(--accent); }
+      .test-result {
+        flex: none;
+        color: var(--test);
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .test-result.passed { color: var(--pass); }
+      .test-result.failed, .test-result.error { color: var(--accent); }
+      .ai-panel {
+        padding: 14px;
+        border: 1px solid var(--test);
+        border-radius: 9px;
+        background: var(--surface);
+        overflow-wrap: anywhere;
+      }
+      .ai-panel[hidden] { display: none; }
+      .ai-panel h2 { color: var(--test); margin: 0 0 10px; }
+      .ai-panel p { font-size: 11px; line-height: 1.5; margin: 7px 0; }
+      .ai-panel button { padding: 8px 0; border: 0; background: none; color: var(--test); font-size: 11px; font-weight: 800; text-align: left; overflow-wrap: anywhere; }
+      .company-panel { padding: 14px; border: 1px solid var(--accent); border-radius: 9px; background: var(--surface); overflow-wrap: anywhere; margin-top: 12px; }
+      .company-panel[hidden] { display: none; }
+      .company-panel h2 { color: var(--accent); margin: 0 0 10px; }
+      .company-panel p { font-size: 11px; line-height: 1.55; margin: 9px 0; }
+      .company-panel strong { display: block; color: var(--ink); }
+      .company-panel small { display: block; color: var(--muted); margin-top: 3px; }
+      h2 {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+        margin: 27px 0 12px;
+      }
+      .legend {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 11px;
+        margin: 11px 0;
+      }
+      .swatch {
+        width: 13px;
+        height: 13px;
+        border: 1.5px solid;
+        border-radius: 3px;
+        background: transparent;
+      }
+      .swatch.change {
+        border-color: var(--accent);
+      }
+      .swatch.function {
+        border-color: var(--call);
+      }
+      .swatch.test {
+        border-color: var(--test);
+      }
+      #detail {
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+      .detail-name {
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+      .detail-type {
+        color: var(--accent);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .path-step {
+        position: relative;
+        border-left: 1px dashed var(--line);
+        padding: 1px 0 15px 17px;
+        font-size: 11px;
+      }
+      .path-step b {
+        display: block;
+        font-size: 11px;
+      }
+      .path-step small {
+        color: var(--muted);
+      }
+      .path-step:before {
+        content: "";
+        position: absolute;
+        left: -4px;
+        top: 5px;
+        width: 7px;
+        height: 7px;
+        background: var(--accent);
+        border-radius: 50%;
+      }
+      .note {
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-left: 2px solid var(--accent);
+        border-radius: 7px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .workspace {
+        padding: 25px 26px;
+        min-width: 0;
+      }
+      .intro {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-end;
+        margin-bottom: 15px;
+      }
+      .intro h2 {
+        margin: 0 0 7px;
+        color: var(--ink);
+        font-size: 17px;
+        letter-spacing: -0.04em;
+        text-transform: none;
+      }
+      .intro p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .step-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .step {
+        padding: 8px 11px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--surface);
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .result-strip {
+        margin: 0 0 15px;
+        padding: 11px 14px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--pass);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .result-strip[hidden] { display: none; }
+      .browser-dialog {
+        width: min(860px, calc(100vw - 30px));
+        max-height: min(78vh, 760px);
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 20px 70px #0008;
+      }
+      .browser-dialog::backdrop { background: #0009; }
+      .browser-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+      }
+      .browser-head h2 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 17px;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .browser-dialog p { color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .browser-dialog input {
+        width: 100%;
+        padding: 11px 12px;
+        margin: 8px 0 17px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+      }
+      .browser-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+      }
+      .browser-results h3 {
+        grid-column: 1 / -1;
+        margin: 15px 0 3px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      .browser-results button {
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-left: 2px solid var(--call);
+        border-radius: 7px;
+        background: var(--bg);
+        text-align: left;
+        overflow-wrap: anywhere;
+        font-size: 11px;
+      }
+      .browser-results button.change { border-left-color: var(--accent); }
+      .browser-results button.test { border-left-color: var(--test); }
+      .browser-results button:hover { border-color: var(--accent); }
+      .browser-results small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .canvas {
+        min-height: 520px;
+        overflow: visible;
+        background:
+          radial-gradient(var(--dots) 0.75px, transparent 0.75px) 0 0/16px 16px,
+          var(--surface);
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background-clip: padding-box;
+        box-shadow:
+          0 0 0 1px var(--line),
+          inset 0 0 0 1px var(--surface);
+      }
+      svg {
+        display: block;
+      }
+      .edge {
+        fill: none;
+        stroke: var(--edge);
+        stroke-width: 1.8;
+        stroke-dasharray: 3 5;
+      }
+      .edge.active {
+        stroke: var(--accent);
+        stroke-width: 2.5;
+        stroke-dasharray: none;
+      }
+      .node {
+        cursor: pointer;
+        transition: opacity 0.16s;
+      }
+      .node .card {
+        fill: var(--surface);
+        stroke: var(--call);
+        stroke-width: 1.6;
+        filter: drop-shadow(0 4px 7px #00000013);
+      }
+      .node.change .card {
+        stroke: var(--accent);
+      }
+      .node.test .card {
+        stroke: var(--test);
+      }
+      .node.test.passed .card {
+        stroke: var(--pass);
+      }
+      .node.test.failed .card,
+      .node.test.error .card {
+        stroke: var(--accent);
+      }
+      .node .inset {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 0.8;
+        stroke-dasharray: 2 5;
+        pointer-events: none;
+      }
+      .node:hover .card,
+      .node.selected .card {
+        stroke-width: 3;
+      }
+      .node.selected .card {
+        filter: drop-shadow(0 0 7px var(--accent-soft));
+      }
+      .node text {
+        pointer-events: none;
+        fill: var(--ink);
+      }
+      .node .caption {
+        font-size: 11px;
+        fill: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .node .name {
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .node .badge {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        fill: var(--accent);
+      }
+      .node.test .badge {
+        fill: var(--test);
+      }
+      .node.test.passed .badge {
+        fill: var(--pass);
+      }
+      .node.test.failed .badge,
+      .node.test.error .badge {
+        fill: var(--accent);
+      }
+      .node.function .badge {
+        fill: var(--call);
+      }
+      .node .status-dot {
+        fill: var(--call);
+      }
+      .node.change .status-dot {
+        fill: var(--accent);
+      }
+      .node.test .status-dot {
+        fill: var(--test);
+      }
+      .node.test.passed .status-dot {
+        fill: var(--pass);
+      }
+      .node.test.failed .status-dot,
+      .node.test.error .status-dot {
+        fill: var(--accent);
+      }
+      svg.focused .node:not(.on-path) {
+        opacity: 0.27;
+      }
+      svg.focused .edge:not(.active) {
+        opacity: 0.17;
+      }
+      @media (max-width: 850px) {
+        main {
+          display: block;
+        }
+        aside {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .workspace {
+          padding: 18px;
+        }
+        header {
+          padding: 18px;
+        }
+        header p {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-row">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"
+            ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
+          ></span>
+          <div>
+            <div class="eyebrow">Graph intelligence / 001</div>
+            <h1>IMPACT<span style="color: var(--accent)">.</span></h1>
+          </div>
+        </div>
+        <button
+          class="control"
+          id="theme-toggle"
+          type="button"
+          aria-label="Switch color theme"
+        >
+          ◐ Theme
+        </button>
+      </div>
+      <p>Trace a code change through callers to the tests that exercise it.</p>
+      <nav class="header-links" id="report-links" aria-label="Report links" hidden></nav>
+    </header>
+    <main>
+      <aside>
+        <div class="eyebrow">Analysis / summary</div>
+        <div class="metric" id="metrics"></div>
+        <details class="test-panel" id="test-panel" hidden>
+          <summary id="test-heading">Selected tests</summary>
+          <p id="test-summary"></p>
+          <div class="test-list" id="test-list"></div>
+        </details>
+        <section class="ai-panel" id="ai-panel" hidden>
+          <h2>Agent / Review priority</h2>
+          <p id="ai-reason"></p>
+          <p id="ai-focus"></p>
+          <button id="ai-test" type="button"></button>
+          <p id="ai-outcome"></p>
+        </section>
+        <section class="company-panel" id="company-panel" hidden>
+          <h2>Company / Context</h2>
+          <div id="company-evidence"></div>
+        </section>
+        <h2>Legend</h2>
+        <div class="legend"><i class="swatch change"></i> Changed function</div>
+        <div class="legend">
+          <i class="swatch function"></i> Potentially affected caller
+        </div>
+        <div class="legend">
+          <i class="swatch test"></i> Reachable or directly changed test
+        </div>
+        <h2>Selected path</h2>
+        <div id="detail"></div>
+        <p class="note">
+          <b>What this means</b><br />Call paths show possible impact. A test
+          edited in the PR is selected directly even if no static call path
+          reaches it. Violet means not run, skipped, or partly run; green means
+          passed and red means failed.
+        </p>
+      </aside>
+      <section class="workspace">
+        <div class="intro">
+          <div>
+            <h2>How the change spreads</h2>
+            <p id="graph-intro">
+              Follow arrows from changed code to callers. Select a card to
+              inspect its path.
+            </p>
+          </div>
+          <button
+            class="control"
+            id="focus-toggle"
+            type="button"
+            aria-pressed="false"
+          >
+            Focus path
+          </button>
+        </div>
+        <div class="step-row">
+          <span class="step">Changed code</span
+          ><span class="step">→ Callers</span
+          ><span class="step">→ Tests</span>
+        </div>
+        <div class="result-strip" id="result-strip" hidden></div>
+        <div class="canvas">
+          <svg
+            id="graph"
+            role="img"
+            aria-label="Call paths from changed functions to potentially affected tests"
+          ></svg>
+        </div>
+      </section>
+    </main>
+    <dialog class="browser-dialog" id="path-browser" aria-labelledby="path-browser-title">
+      <div class="browser-head">
+        <h2 id="path-browser-title">Browse paths</h2>
+        <button class="control" id="path-browser-close" type="button">Close</button>
+      </div>
+      <p>Choose any changed function, caller, or test. The graph will show its path.</p>
+      <label for="path-search" class="eyebrow">Find a function or test</label>
+      <input id="path-search" type="search" placeholder="Search names or files" autocomplete="off" />
+      <div class="browser-results" id="path-results"></div>
+    </dialog>
+    <script>
+      const root = document.documentElement,
+        themeButton = document.getElementById("theme-toggle");
+      let savedTheme;
+      try {
+        savedTheme = localStorage.getItem("impact-theme");
+      } catch (_) {}
+      function setTheme(theme) {
+        root.dataset.theme = theme;
+        themeButton.textContent =
+          theme === "dark" ? "◐ Light mode" : "◐ Dark mode";
+        try {
+          localStorage.setItem("impact-theme", theme);
+        } catch (_) {}
+      }
+      setTheme(
+        savedTheme ||
+          (window.matchMedia &&
+          matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light"),
+      );
+      themeButton.addEventListener("click", () =>
+        setTheme(root.dataset.theme === "dark" ? "light" : "dark"),
+      );
+      const data = {"nodes": [{"id": "src/requests/adapters.py::HTTPAdapter.request_url", "file": "adapters.py", "name": "HTTPAdapter.request_url", "kind": "change", "changed": true, "depth": 0, "path": ["src/requests/adapters.py::HTTPAdapter.request_url"]}, {"id": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "file": "test_adapters.py", "name": "test_request_url_trims_leading_path_separators", "kind": "test", "changed": true, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "tests/test_adapters.py::test_request_url_trims_leading_path_separators"]}, {"id": "src/requests/adapters.py::HTTPAdapter.send", "file": "adapters.py", "name": "HTTPAdapter.send", "kind": "function", "changed": false, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "src/requests/adapters.py::HTTPAdapter.send"]}], "edges": [{"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "src/requests/adapters.py::HTTPAdapter.send"}, {"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"}], "ai": {"focus": "src/requests/adapters.py::HTTPAdapter.request_url", "priority_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "reason": "The edit may affect a boundary case."}, "company": []};
+      if (data.case_summary) {
+        const strip = document.getElementById("result-strip");
+        strip.textContent = "Observed test run: " + data.case_summary;
+        strip.hidden = false;
+      }
+      if (Array.isArray(data.links) && data.links.length) {
+        const links = document.getElementById("report-links");
+        data.links.forEach((entry) => {
+          const anchor = document.createElement("a");
+          anchor.href = entry.href;
+          anchor.textContent = entry.label;
+          links.appendChild(anchor);
+        });
+        links.hidden = false;
+      }
+      if (data.company && data.company.length) {
+        document.getElementById("company-panel").hidden = false;
+        const evidence = document.getElementById("company-evidence");
+        data.company.forEach((entry) => {
+          const heading = document.createElement("p");
+          const name = document.createElement("strong");
+          name.textContent = entry.function;
+          heading.appendChild(name);
+          evidence.appendChild(heading);
+          entry.owners.forEach((owner) => {
+            const item = document.createElement("p");
+            item.textContent = `Reviewer: ${owner.name} · ${owner.team}`;
+            evidence.appendChild(item);
+          });
+          entry.sources.forEach((source) => {
+            const item = document.createElement("p");
+            const title = document.createElement("strong");
+            title.textContent = `${source.kind}: ${source.title}`;
+            const path = document.createElement("small");
+            path.textContent = source.path;
+            item.append(title, path);
+            evidence.appendChild(item);
+          });
+        });
+      }
+      function pytestId(id) {
+        const cut = id.indexOf("::");
+        return id.slice(0, cut + 2) + id.slice(cut + 2).replace(/\./g, "::");
+      }
+      if (data.ai) {
+        document.getElementById("ai-panel").hidden = false;
+        document.getElementById("ai-reason").textContent = data.ai.reason;
+        document.getElementById("ai-focus").textContent = "Inspect: " + data.ai.focus;
+        const testButton = document.getElementById("ai-test");
+        testButton.textContent = data.ai.priority_test
+          ? "First test: " + data.ai.priority_test
+          : "No selected test";
+        testButton.disabled = !data.ai.priority_test;
+        if (data.ai.priority_test) {
+          testButton.addEventListener("click", () => {
+            const node = data.nodes.find((n) => pytestId(n.id) === data.ai.priority_test);
+            if (node) select(node.id);
+          });
+          const chosen = data.nodes.find((n) => pytestId(n.id) === data.ai.priority_test);
+          document.getElementById("ai-outcome").textContent = chosen && chosen.status
+            ? "Observed result: " + chosen.status.toUpperCase()
+            : "Test has not been run.";
+        }
+      }
+      const ns = "http://www.w3.org/2000/svg",
+        svg = document.getElementById("graph");
+      const byId = Object.fromEntries(data.nodes.map((n) => [n.id, n]));
+      const maxDepth = Math.max(0, ...data.nodes.map((n) => n.depth));
+      let edgeEls = [], nodeEls = {}, selectedId = null;
+      const largeGraph = data.nodes.length > 16;
+      let focused = largeGraph;
+      function renderGraph() {
+        svg.replaceChildren();
+        edgeEls = [];
+        nodeEls = {};
+        const path = byId[selectedId]?.path || [];
+        const visibleIds = focused ? new Set(path) : null;
+        const visibleNodes = focused
+          ? data.nodes.filter((n) => visibleIds.has(n.id))
+          : data.nodes;
+        const levels = Array.from({ length: maxDepth + 1 }, (_, d) =>
+          visibleNodes
+            .filter((n) => n.depth === d)
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        );
+        const widest = Math.max(1, ...levels.map((l) => l.length));
+        const canvasWidth = svg.parentElement.clientWidth;
+        const requiredWidth = widest * 260 + (widest - 1) * 24 + 70;
+        const narrow = canvasWidth < Math.max(880, requiredWidth);
+        const cardW = narrow ? Math.min(260, Math.max(150, canvasWidth - 32)) : 260,
+          cardH = 90;
+        const width = canvasWidth;
+        const pos = {};
+        let height;
+        if (narrow) {
+          let nextY = 32;
+          levels.forEach((level) => {
+            level.forEach((n, i) => {
+              pos[n.id] = {
+                x: (width - cardW) / 2,
+                y: nextY + i * (cardH + 30),
+              };
+            });
+            nextY += level.length * (cardH + 30) + 45;
+          });
+          height = Math.max(520, nextY + 10);
+        } else {
+          levels.forEach((level, d) => {
+            const groupW = level.length * cardW + (level.length - 1) * 24;
+            const firstX = (width - groupW) / 2;
+            level.forEach((n, i) => {
+              pos[n.id] = { x: firstX + i * (cardW + 24), y: 48 + d * 165 };
+            });
+          });
+          height = Math.max(520, 48 + maxDepth * 165 + cardH + 48);
+        }
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.style.width = width + "px";
+        svg.style.height = height + "px";
+        function el(tag, attrs = {}, parent = svg) {
+          const e = document.createElementNS(ns, tag);
+          for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+          parent.appendChild(e);
+          return e;
+        }
+        data.edges.filter((edge) =>
+          !focused || (visibleIds.has(edge.from) && visibleIds.has(edge.to))
+        ).forEach((edge, index) => {
+          const a = pos[edge.from],
+            b = pos[edge.to];
+          if (!a || !b) return;
+          const x1 = a.x + cardW / 2,
+            y1 = a.y + cardH,
+            x2 = b.x + cardW / 2,
+            y2 = b.y,
+            bend = (y1 + y2) / 2;
+          const laneX = index % 2 ? width - 12 : 12;
+          const route = narrow && y2 - y1 > 110
+            ? `M${x1},${y1} C${x1},${y1 + 22} ${laneX},${y1 + 22} ${laneX},${y1 + 44} L${laneX},${y2 - 34} C${laneX},${y2 - 14} ${x2},${y2 - 14} ${x2},${y2}`
+            : `M${x1},${y1} C${x1},${bend} ${x2},${bend} ${x2},${y2}`;
+          const path = el("path", {
+            d: route,
+            class: "edge",
+          });
+          edgeEls.push({ from: edge.from, to: edge.to, el: path });
+          const arrow = el("path", {
+            d: `M${x2 - 5},${y2 - 8} L${x2},${y2} L${x2 + 5},${y2 - 8}`,
+            class: "edge arrow",
+          });
+          edgeEls.push({ from: edge.from, to: edge.to, el: arrow });
+        });
+        function wrapName(value) {
+          if (value.length <= 27) return [value];
+          let cut = Math.max(
+            value.lastIndexOf("_", 27),
+            value.lastIndexOf(".", 27),
+          );
+          cut = cut >= 14 ? cut + 1 : 27;
+          const second = value.slice(cut);
+          return [
+            value.slice(0, cut),
+            second.length > 27 ? second.slice(0, 26) + "…" : second,
+          ];
+        }
+        visibleNodes.forEach((n) => {
+          const p = pos[n.id],
+            g = el("g", {
+              class:
+                "node " +
+                n.kind +
+                " " +
+                (n.changed ? "changed " : "") +
+                (n.status || ""),
+              tabindex: "0",
+              role: "button",
+              "aria-label": n.id,
+            });
+          nodeEls[n.id] = g;
+          el(
+            "rect",
+            { x: p.x, y: p.y, width: cardW, height: cardH, rx: 9, class: "card" },
+            g,
+          );
+          el(
+            "rect",
+            {
+              x: p.x + 5,
+              y: p.y + 5,
+              width: cardW - 10,
+              height: cardH - 10,
+              rx: 6,
+              class: "inset",
+            },
+            g,
+          );
+          el(
+            "circle",
+            { cx: p.x + 18, cy: p.y + 20, r: 4, class: "status-dot" },
+            g,
+          );
+          const badge = el(
+            "text",
+            { x: p.x + 31, y: p.y + 23, class: "badge" },
+            g,
+          );
+          badge.textContent =
+            n.kind === "change"
+              ? "CHANGED"
+              : n.kind === "test"
+                ? n.changed
+                  ? "CHANGED TEST" +
+                    (n.status === "passed"
+                      ? " · PASS"
+                      : n.status === "partial"
+                        ? " · PARTIAL"
+                      : n.status === "skipped"
+                        ? " · SKIP"
+                      : n.status === "failed"
+                        ? " · FAIL"
+                        : n.status === "error"
+                          ? " · ERROR"
+                          : "")
+                  : n.status === "passed"
+                    ? "TEST · PASS"
+                    : n.status === "partial"
+                      ? "TEST · PARTIAL"
+                    : n.status === "skipped"
+                      ? "TEST · SKIP"
+                    : n.status === "failed"
+                      ? "TEST · FAIL"
+                      : n.status === "error"
+                        ? "TEST · ERROR"
+                        : "TEST TO INSPECT"
+                : "CALLER";
+          const file = el(
+            "text",
+            {
+              x: p.x + cardW - 13,
+              y: p.y + 39,
+              class: "caption",
+              "text-anchor": "end",
+            },
+            g,
+          );
+          file.textContent = n.file.length > 30
+            ? n.file.slice(0, 13) + "…" + n.file.slice(-14)
+            : n.file;
+          const name = el("text", { x: p.x + 18, y: p.y + 58, class: "name" }, g);
+          wrapName(n.name).forEach((line, i) => {
+            const span = el("tspan", { x: p.x + 18, dy: i ? 17 : 0 }, name);
+            span.textContent = line;
+          });
+          const title = el("title", {}, g);
+          title.textContent = n.id;
+          g.addEventListener("click", () => select(n.id));
+          g.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              select(n.id);
+            }
+          });
+        });
+        if (selectedId) select(selectedId);
+        svg.classList.toggle("focused", focused);
+      }
+      const affected = data.nodes.filter((n) => !n.changed).length,
+        tests = data.nodes.filter((n) => n.kind === "test").length;
+      document.getElementById("metrics").innerHTML =
+        `<div><strong>${affected}</strong><span>reachable nodes</span></div><div><strong>${tests}</strong><span>selected tests</span></div><div><strong>${maxDepth}</strong><span>maximum call steps</span></div><div><strong>${data.nodes.filter((n) => n.kind === "change").length}</strong><span>changed functions</span></div>`;
+      const focusButton = document.getElementById("focus-toggle");
+      const pathBrowser = document.getElementById("path-browser");
+      const pathSearch = document.getElementById("path-search");
+      const pathResults = document.getElementById("path-results");
+      const browseGroups = [
+        ["Changed functions", (n) => n.kind === "change"],
+        ["Changed tests", (n) => n.kind === "test" && n.changed],
+        ["Callers", (n) => n.kind === "function"],
+        ["Other selected tests", (n) => n.kind === "test" && !n.changed],
+      ];
+      function renderPathBrowser() {
+        const query = pathSearch.value.trim().toLowerCase();
+        pathResults.replaceChildren();
+        browseGroups.forEach(([title, matches]) => {
+          const items = data.nodes.filter((n) =>
+            matches(n) && (!query || n.id.toLowerCase().includes(query))
+          ).sort((a, b) => a.id.localeCompare(b.id));
+          if (!items.length) return;
+          const heading = document.createElement("h3");
+          heading.textContent = `${title} (${items.length})`;
+          pathResults.appendChild(heading);
+          items.forEach((n) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = n.kind;
+            const name = document.createElement("strong");
+            name.textContent = n.name;
+            const detail = document.createElement("small");
+            detail.textContent = n.file + (n.status ? ` · ${n.status}` : "");
+            button.append(name, detail);
+            button.addEventListener("click", () => {
+              selectedId = n.id;
+              renderGraph();
+              pathBrowser.close();
+            });
+            pathResults.appendChild(button);
+          });
+        });
+        if (!pathResults.childElementCount) {
+          const empty = document.createElement("p");
+          empty.textContent = "No matching paths.";
+          pathResults.appendChild(empty);
+        }
+      }
+      pathSearch.addEventListener("input", renderPathBrowser);
+      document.getElementById("path-browser-close").addEventListener("click", () =>
+        pathBrowser.close()
+      );
+      function updateFocusControl() {
+        if (largeGraph) {
+          focusButton.removeAttribute("aria-pressed");
+          focusButton.textContent = "Browse paths";
+          document.getElementById("graph-intro").textContent =
+            "One path is shown at a time. Browse paths or choose a test in the sidebar.";
+        } else {
+          focusButton.setAttribute("aria-pressed", String(focused));
+          focusButton.textContent = focused ? "Show all paths" : "Focus path";
+          document.getElementById("graph-intro").textContent = focused
+            ? "One path is shown. Choose a test in the sidebar or show all paths."
+            : "Follow arrows from changed code to callers. Select a card to inspect its path.";
+        }
+      }
+      focusButton.addEventListener("click", () => {
+        if (largeGraph) {
+          pathSearch.value = "";
+          renderPathBrowser();
+          pathBrowser.showModal();
+          pathSearch.focus();
+          return;
+        }
+        focused = !focused;
+        updateFocusControl();
+        renderGraph();
+      });
+      function select(id) {
+        selectedId = id;
+        const n = byId[id],
+          path = n.path || [id],
+          active = new Set(path);
+        Object.entries(nodeEls).forEach(([key, g]) => {
+          g.classList.toggle("selected", key === id);
+          g.classList.toggle("on-path", active.has(key));
+        });
+        edgeEls.forEach((e) =>
+          e.el.classList.toggle(
+            "active",
+            path.some(
+              (node, i) => i > 0 && path[i - 1] === e.from && node === e.to,
+            ),
+          ),
+        );
+        const detail = document.getElementById("detail");
+        detail.replaceChildren();
+        const type = document.createElement("div");
+        type.className = "detail-type";
+        type.textContent =
+          n.kind === "change"
+            ? "Changed function"
+            : n.kind === "test"
+              ? n.changed
+                ? "Changed test" + (n.status ? " · " + n.status : "")
+                : n.status
+                  ? "Test · " + n.status
+                  : "Test to inspect"
+              : "Potentially affected caller";
+        detail.appendChild(type);
+        const heading = document.createElement("div");
+        heading.className = "detail-name";
+        heading.textContent = n.name;
+        detail.appendChild(heading);
+        const text = document.createElement("p");
+        text.textContent =
+          n.kind === "test"
+            ? n.changed
+              ? n.path.length > 1
+                ? "This test changed in the PR and has a static call path to the changed code."
+                : "This test changed in the PR and is selected directly. No static call path to the changed production function was found."
+              : "This test calls code that reaches the change."
+            : "This function is connected to the change through these calls.";
+        detail.appendChild(text);
+        path.forEach((step, i) => {
+          const item = byId[step],
+            line = document.createElement("div");
+          line.className = "path-step";
+          const label = document.createElement("b");
+          label.textContent = i + 1 + ". " + (item ? item.name : step);
+          line.appendChild(label);
+          if (item) {
+            const file = document.createElement("small");
+            file.textContent = item.file;
+            line.appendChild(file);
+          }
+          detail.appendChild(line);
+        });
+      }
+      const selectedTests = data.nodes
+        .filter((n) => n.kind === "test")
+        .sort((a, b) => a.id.localeCompare(b.id));
+      if (selectedTests.length) {
+        const panel = document.getElementById("test-panel");
+        panel.hidden = false;
+        document.getElementById("test-heading").textContent =
+          `Selected tests (${selectedTests.length})`;
+        const counts = {};
+        selectedTests.forEach((n) => {
+          const status = n.status || "not run";
+          counts[status] = (counts[status] || 0) + 1;
+          const button = document.createElement("button");
+          button.type = "button";
+          const result = document.createElement("span");
+          result.className = `test-result ${n.status || ""}`;
+          result.textContent = status;
+          const name = document.createElement("span");
+          name.textContent = n.name;
+          button.append(result, name);
+          button.title = n.id;
+          button.addEventListener("click", () => {
+            selectedId = n.id;
+            if (focused) renderGraph();
+            else select(n.id);
+          });
+          document.getElementById("test-list").appendChild(button);
+        });
+        document.getElementById("test-summary").textContent =
+          Object.entries(counts).map(([status, count]) => `${count} ${status}`).join(" · ") +
+          (data.case_summary ? ` — ${data.case_summary}` : "");
+      }
+      const initial =
+        (data.ai && data.nodes.find((n) => pytestId(n.id) === data.ai.priority_test)) ||
+        data.nodes.find((n) => n.kind === "test" && n.changed && n.path.length > 1) ||
+        data.nodes
+          .filter((n) => n.kind === "test")
+          .sort((a, b) => b.depth - a.depth)[0] || data.nodes[0];
+      if (initial) selectedId = initial.id;
+      updateFocusControl();
+      renderGraph();
+      let lastCanvasWidth = svg.parentElement.clientWidth;
+      new ResizeObserver(() => {
+        const currentWidth = svg.parentElement.clientWidth;
+        if (Math.abs(currentWidth - lastCanvasWidth) > 1) {
+          lastCanvasWidth = currentWidth;
+          renderGraph();
+        }
+      }).observe(svg.parentElement);
+    </script>
+  </body>
+</html>

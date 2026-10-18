@@ -14,12 +14,17 @@ produce its impact paths or test selection without FalkorDB.
 > expanded to 43 cases:
 > **34 passed, 9 remote-service cases skipped, 0 failed**.
 > [Explore the graph](https://omar8345.github.io/IMPACT/httpie-pr-1327/) ·
-> [Read the report](docs/httpie-pr-1327/impact-report.md)
+> [Read the report](docs/httpie-pr-1327/impact-report.md) ·
+> [See the AI review](https://omar8345.github.io/IMPACT/httpie-pr-1327/ai-impact.html)
 
 For a smaller example with an executed test, see
 [Requests #6644](https://github.com/psf/requests/pull/6644):
 [graph](https://omar8345.github.io/IMPACT/real-pr/) ·
-[report](docs/real-pr/impact-report.md). Its selected test passed.
+[report](docs/real-pr/impact-report.md) ·
+[AI review](https://omar8345.github.io/IMPACT/real-pr/ai-impact.html). Its selected test passed.
+
+The AI views show model-selected review priorities. The linked reports contain
+the separately executed test results; tests were not rerun for the AI views.
 
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
