@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IMPACT — Real PR example</title>
+  <title>IMPACT — Real PR examples</title>
   <style>
     :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     * { box-sizing: border-box; }
@@ -16,21 +16,26 @@
     p { color: #b5b8bd; line-height: 1.7; }
     strong { color: #f3f3f1; }
     nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-    a { color: #f3f3f1; border: 1px solid #ff5264; border-radius: 8px; padding: 12px 16px;
+    nav a { color: #f3f3f1; border: 1px solid #ff5264; border-radius: 8px; padding: 12px 16px;
       text-decoration: none; font-weight: 700; }
-    a:hover, a:focus-visible { background: #ff5264; color: #111315; }
+    nav a:hover, nav a:focus-visible { background: #ff5264; color: #111315; }
+    p a { color: #f3f3f1; text-underline-offset: 3px; }
   </style>
 </head>
 <body>
   <main>
     <div class="eyebrow">IMPACT / PUBLIC PR EXAMPLE</div>
-    <h1>Real PR.<br>Real test.</h1>
-    <p>IMPACT analyzed <strong>Requests PR #6644</strong>, traced a changed method to
-      its callers through FalkorDB, and ran the selected test. <strong>It passed.</strong></p>
+    <h1>Real PRs.<br>Visible impact.</h1>
+    <p><strong><a href="https://github.com/httpie/cli/pull/1327">HTTPie PR #1327</a></strong>
+      changes secure-cookie behavior across 9 files.
+      IMPACT found 21 possible callers of a changed constructor, including 13
+      relevant tests. These tests were identified, not executed.</p>
     <nav aria-label="Reports">
-      <a href="real-pr/">Explore the graph →</a>
-      <a href="https://github.com/Omar8345/IMPACT/blob/master/docs/real-pr/impact-report.md">Read the Markdown report →</a>
+      <a href="httpie-pr-1327/">Explore the HTTPie graph →</a>
+      <a href="https://github.com/Omar8345/IMPACT/blob/master/docs/httpie-pr-1327/impact-report.md">Read the HTTPie report →</a>
     </nav>
+    <p>For a smaller example with a test actually run, see
+      <a href="real-pr/">Requests PR #6644</a>. The selected test passed.</p>
   </main>
 </body>
 </html>

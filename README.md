@@ -7,11 +7,17 @@ functions that may be affected by a change, chooses relevant tests, and shows th
 call paths that justify its suggestions. The graph is central: the review cannot
 produce its impact paths or test selection without FalkorDB.
 
-> **Verified on a real PR:** On [Requests #6644](https://github.com/psf/requests/pull/6644),
-> IMPACT indexed 645 functions, traced `HTTPAdapter.send` and the PR's test to
-> the changed method, then ran the selected test: **passed**.
-> [Explore the graph](https://omar8345.github.io/IMPACT/real-pr/) ·
-> [Read the full Markdown report](docs/real-pr/impact-report.md)
+> **Larger real PR:** On [HTTPie #1327](https://github.com/httpie/cli/pull/1327),
+> IMPACT indexed 956 functions from an application PR spanning 9 files. From a
+> changed session constructor, FalkorDB found 21 possible callers, including 13
+> tests, with paths up to 4 calls long. Those tests were identified but not run.
+> [Explore the graph](https://omar8345.github.io/IMPACT/httpie-pr-1327/) ·
+> [Read the report](docs/httpie-pr-1327/impact-report.md)
+
+For a smaller example with an executed test, see
+[Requests #6644](https://github.com/psf/requests/pull/6644):
+[graph](https://omar8345.github.io/IMPACT/real-pr/) ·
+[report](docs/real-pr/impact-report.md). Its selected test passed.
 
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
@@ -233,8 +239,9 @@ Current PR analysis covers functions present in the new checkout; fully deleted
 or renamed functions need a future comparison of both code versions.
 
 The Requests example requires the target project's runtime dependencies to run
-its tests. The synthetic checkout demo above shows a longer path and failing
-tests without extra target dependencies.
+its tests. The HTTPie example shows a larger change and graph-selected tests;
+those tests were not executed for the published report. The synthetic checkout
+demo above shows a longer path and failing tests without extra target dependencies.
 
 ## Optional AI graph-tool use with OpenRouter
 
