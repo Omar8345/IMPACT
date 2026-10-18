@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMPACT — Real PR example</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px;
+      background: #111315; color: #f3f3f1; }
+    main { width: min(100%, 700px); border: 1px solid #44484d; border-radius: 14px;
+      padding: clamp(24px, 5vw, 48px); background: #191b1e; }
+    .eyebrow { color: #ff5264; font-size: 12px; font-weight: 800; letter-spacing: .15em; }
+    h1 { font-size: clamp(36px, 7vw, 68px); line-height: 1; margin: 18px 0 22px; }
+    p { color: #b5b8bd; line-height: 1.7; }
+    strong { color: #f3f3f1; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    a { color: #f3f3f1; border: 1px solid #ff5264; border-radius: 8px; padding: 12px 16px;
+      text-decoration: none; font-weight: 700; }
+    a:hover, a:focus-visible { background: #ff5264; color: #111315; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">IMPACT / PUBLIC PR EXAMPLE</div>
+    <h1>Real PR.<br>Real test.</h1>
+    <p>IMPACT analyzed <strong>Requests PR #6644</strong>, traced a changed method to
+      its callers through FalkorDB, and ran the selected test. <strong>It passed.</strong></p>
+    <nav aria-label="Reports">
+      <a href="real-pr/">Explore the graph →</a>
+      <a href="https://github.com/Omar8345/IMPACT/blob/master/docs/real-pr/impact-report.md">Read the Markdown report →</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -10,6 +10,8 @@ produce its impact paths or test selection without FalkorDB.
 > **Verified on a real PR:** On [Requests #6644](https://github.com/psf/requests/pull/6644),
 > IMPACT indexed 645 functions, traced `HTTPAdapter.send` and the PR's test to
 > the changed method, then ran the selected test: **passed**.
+> [Explore the graph](https://omar8345.github.io/IMPACT/real-pr/) ·
+> [Read the full Markdown report](docs/real-pr/impact-report.md)
 
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
