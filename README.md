@@ -38,12 +38,12 @@ produce its impact paths or test selection without FalkorDB.
 
 ## What the four runs showed
 
-| Review | Selected tests | Observed result | Agent's next step |
-| --- | ---: | --- | --- |
-| [Coupon regression](https://omar8345.github.io/IMPACT/coupon-agent/) (synthetic) | 3 | 2 failed, 1 passed | Review the proposed discount cap, then rerun |
-| [Harbor Cart fix PR #1](https://omar8345.github.io/IMPACT/checkout-pr/) (synthetic PR) | 3 on both commits | 2 base failures now pass; 0 new failures | Review the fix and remaining checks |
-| [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/) | 1 | 1 passed | Run the broader test suite |
-| [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/) | 18 targets, 43 cases | 34 passed, 9 remote cases skipped | Run the skipped cases with the required service |
+| Review                                                                                 |       Selected tests | Observed result                          | Agent's next step                               |
+| -------------------------------------------------------------------------------------- | -------------------: | ---------------------------------------- | ----------------------------------------------- |
+| [Coupon regression](https://omar8345.github.io/IMPACT/coupon-agent/) (synthetic)       |                    3 | 2 failed, 1 passed                       | Review the proposed discount cap, then rerun    |
+| [Harbor Cart fix PR #1](https://omar8345.github.io/IMPACT/checkout-pr/) (synthetic PR) |    3 on both commits | 2 base failures now pass; 0 new failures | Review the fix and remaining checks             |
+| [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/)                        |                    1 | 1 passed                                 | Run the broader test suite                      |
+| [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/)                   | 18 targets, 43 cases | 34 passed, 9 remote cases skipped        | Run the skipped cases with the required service |
 
 These four case studies show the workflow on synthetic and public repositories.
 The separate controlled evaluation above measures test-selection behavior.
@@ -163,6 +163,23 @@ data and needs no API key unless `--llm` is requested. The hackathon submission
 links to the working screen-recorded demo above; the video is not stored
 in this source archive. To evaluate the model-guided agent path, use an
 OpenRouter key and the `--llm` command under “Optional AI graph-tool use.”
+
+## Hosted public analyzer
+
+Hosted analyzer URL: **not deployed yet**. The service is prepared for a small
+Railway/Render-style deployment with `Procfile` and `render.yaml`; set the
+FalkorDB Cloud variables in the provider dashboard, then publish the assigned
+HTTPS URL here. It accepts only public GitHub PR URLs, creates an isolated graph
+per job, and expires results. It parses Python without running repository code
+or tests; selected-test execution remains local-only. See the [deployment and
+environment-variable guide](docs/hosted-analyzer.md).
+
+The three-case evidence page is [published on GitHub Pages](https://omar8345.github.io/IMPACT/evaluation/).
+The controlled benchmark reports 29/29 failure-revealing test instances and
+69.2% fewer executions. Requests #6644 has one passing selected test but no
+reliable full-suite comparison. HTTPie #1327 selected 43 of 1,012 collected
+cases (95.8% fewer); 34 passed and 9 remote-service cases were skipped. Neither
+real-PR case is assigned a failure-recall percentage.
 
 ## Run the full demo
 
