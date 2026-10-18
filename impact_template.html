@@ -374,6 +374,75 @@
         font-weight: 750;
       }
       .result-strip[hidden] { display: none; }
+      .browser-dialog {
+        width: min(860px, calc(100vw - 30px));
+        max-height: min(78vh, 760px);
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 20px 70px #0008;
+      }
+      .browser-dialog::backdrop { background: #0009; }
+      .browser-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+      }
+      .browser-head h2 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 17px;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .browser-dialog p { color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .browser-dialog input {
+        width: 100%;
+        padding: 11px 12px;
+        margin: 8px 0 17px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+      }
+      .browser-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+      }
+      .browser-results h3 {
+        grid-column: 1 / -1;
+        margin: 15px 0 3px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      .browser-results button {
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-left: 2px solid var(--call);
+        border-radius: 7px;
+        background: var(--bg);
+        text-align: left;
+        overflow-wrap: anywhere;
+        font-size: 11px;
+      }
+      .browser-results button.change { border-left-color: var(--accent); }
+      .browser-results button.test { border-left-color: var(--test); }
+      .browser-results button:hover { border-color: var(--accent); }
+      .browser-results small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10px;
+      }
       .canvas {
         min-height: 520px;
         overflow: visible;
@@ -606,6 +675,16 @@
         </div>
       </section>
     </main>
+    <dialog class="browser-dialog" id="path-browser" aria-labelledby="path-browser-title">
+      <div class="browser-head">
+        <h2 id="path-browser-title">Browse paths</h2>
+        <button class="control" id="path-browser-close" type="button">Close</button>
+      </div>
+      <p>Choose any changed function, caller, or test. The graph will show its path.</p>
+      <label for="path-search" class="eyebrow">Find a function or test</label>
+      <input id="path-search" type="search" placeholder="Search names or files" autocomplete="off" />
+      <div class="browser-results" id="path-results"></div>
+    </dialog>
     <script>
       const root = document.documentElement,
         themeButton = document.getElementById("theme-toggle");
@@ -701,7 +780,8 @@
       const byId = Object.fromEntries(data.nodes.map((n) => [n.id, n]));
       const maxDepth = Math.max(0, ...data.nodes.map((n) => n.depth));
       let edgeEls = [], nodeEls = {}, selectedId = null;
-      let focused = data.nodes.length > 16;
+      const largeGraph = data.nodes.length > 16;
+      let focused = largeGraph;
       function renderGraph() {
         svg.replaceChildren();
         edgeEls = [];
@@ -901,14 +981,75 @@
       document.getElementById("metrics").innerHTML =
         `<div><strong>${affected}</strong><span>reachable nodes</span></div><div><strong>${tests}</strong><span>selected tests</span></div><div><strong>${maxDepth}</strong><span>maximum call steps</span></div><div><strong>${data.nodes.filter((n) => n.kind === "change").length}</strong><span>changed functions</span></div>`;
       const focusButton = document.getElementById("focus-toggle");
+      const pathBrowser = document.getElementById("path-browser");
+      const pathSearch = document.getElementById("path-search");
+      const pathResults = document.getElementById("path-results");
+      const browseGroups = [
+        ["Changed functions", (n) => n.kind === "change"],
+        ["Changed tests", (n) => n.kind === "test" && n.changed],
+        ["Callers", (n) => n.kind === "function"],
+        ["Other selected tests", (n) => n.kind === "test" && !n.changed],
+      ];
+      function renderPathBrowser() {
+        const query = pathSearch.value.trim().toLowerCase();
+        pathResults.replaceChildren();
+        browseGroups.forEach(([title, matches]) => {
+          const items = data.nodes.filter((n) =>
+            matches(n) && (!query || n.id.toLowerCase().includes(query))
+          ).sort((a, b) => a.id.localeCompare(b.id));
+          if (!items.length) return;
+          const heading = document.createElement("h3");
+          heading.textContent = `${title} (${items.length})`;
+          pathResults.appendChild(heading);
+          items.forEach((n) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = n.kind;
+            const name = document.createElement("strong");
+            name.textContent = n.name;
+            const detail = document.createElement("small");
+            detail.textContent = n.file + (n.status ? ` · ${n.status}` : "");
+            button.append(name, detail);
+            button.addEventListener("click", () => {
+              selectedId = n.id;
+              renderGraph();
+              pathBrowser.close();
+            });
+            pathResults.appendChild(button);
+          });
+        });
+        if (!pathResults.childElementCount) {
+          const empty = document.createElement("p");
+          empty.textContent = "No matching paths.";
+          pathResults.appendChild(empty);
+        }
+      }
+      pathSearch.addEventListener("input", renderPathBrowser);
+      document.getElementById("path-browser-close").addEventListener("click", () =>
+        pathBrowser.close()
+      );
       function updateFocusControl() {
-        focusButton.setAttribute("aria-pressed", String(focused));
-        focusButton.textContent = focused ? "Show all paths" : "Focus path";
-        document.getElementById("graph-intro").textContent = focused
-          ? "One path is shown. Choose a test in the sidebar or show all paths."
-          : "Follow arrows from changed code to callers. Select a card to inspect its path.";
+        if (largeGraph) {
+          focusButton.removeAttribute("aria-pressed");
+          focusButton.textContent = "Browse paths";
+          document.getElementById("graph-intro").textContent =
+            "One path is shown at a time. Browse paths or choose a test in the sidebar.";
+        } else {
+          focusButton.setAttribute("aria-pressed", String(focused));
+          focusButton.textContent = focused ? "Show all paths" : "Focus path";
+          document.getElementById("graph-intro").textContent = focused
+            ? "One path is shown. Choose a test in the sidebar or show all paths."
+            : "Follow arrows from changed code to callers. Select a card to inspect its path.";
+        }
       }
       focusButton.addEventListener("click", () => {
+        if (largeGraph) {
+          pathSearch.value = "";
+          renderPathBrowser();
+          pathBrowser.showModal();
+          pathSearch.focus();
+          return;
+        }
         focused = !focused;
         updateFocusControl();
         renderGraph();
