@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -6,6 +7,18 @@ import github_pr
 
 
 class GitHubPRTests(unittest.TestCase):
+    def test_get_pr_uses_optional_server_side_github_token(self):
+        payload = {"base": {"sha": "a" * 40, "ref": "main"},
+                   "head": {"sha": "b" * 40}}
+        response = MagicMock()
+        response.__enter__.return_value = response
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "test-token"}):
+            with patch.object(github_pr, "urlopen", return_value=response) as urlopen:
+                with patch.object(github_pr.json, "load", return_value=payload):
+                    github_pr.get_pr("https://github.com/owner/repo/pull/42")
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("Authorization"), "Bearer test-token")
+
     def test_pr_url_accepts_only_github_pull_requests(self):
         self.assertEqual(github_pr.parse_pr_url("https://github.com/owner/repo/pull/42"),
                          ("owner", "repo", 42))

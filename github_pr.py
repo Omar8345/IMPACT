@@ -1,6 +1,7 @@
 """Fetch a public GitHub PR at a fixed head commit and optionally comment on it."""
 
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -31,8 +32,11 @@ def parse_pr_url(url):
 def get_pr(url):
     owner, repo, number = parse_pr_url(url)
     endpoint = f"https://api.github.com/repos/{owner}/{repo}/pulls/{number}"
-    request = Request(endpoint, headers={"Accept": "application/vnd.github+json",
-                                         "User-Agent": "IMPACT-PR-review"})
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "IMPACT-PR-review"}
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = Request(endpoint, headers=headers)
     try:
         with urlopen(request, timeout=20) as response:
             payload = json.load(response)
