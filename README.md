@@ -16,13 +16,17 @@ produce its impact paths or test selection without FalkorDB.
 > [Explore the graph, AI priority, and test results](https://omar8345.github.io/IMPACT/httpie-pr-1327/) ·
 > [Read the report](docs/httpie-pr-1327/impact-report.md)
 
-For a smaller example with an executed test, see
-[Requests #6644](https://github.com/psf/requests/pull/6644):
-[graph and AI priority](https://omar8345.github.io/IMPACT/real-pr/) ·
-[report](docs/real-pr/impact-report.md). Its selected test passed.
+## What the three runs showed
 
-Each example combines the model's review priority with test results from a
-separate execution of the selected tests.
+| Review | Selected tests | Observed result | Agent's next step |
+| --- | ---: | --- | --- |
+| [Coupon regression](https://omar8345.github.io/IMPACT/coupon-agent/) (synthetic) | 3 | 2 failed, 1 passed | Review the proposed discount cap, then rerun |
+| [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/) | 1 | 1 passed | Run the broader test suite |
+| [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/) | 18 targets, 43 cases | 34 passed, 9 remote cases skipped | Run the skipped cases with the required service |
+
+These are three case studies, not an accuracy benchmark. Test outcomes come
+from actual runs; the AI's review priorities and next steps are shown alongside
+them. The coupon fix is a proposal, not an applied or verified patch.
 
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
