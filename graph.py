@@ -6,7 +6,7 @@ from falkordb import FalkorDB
 GRAPH = os.getenv("FALKORDB_GRAPH", "pr_impact")
 
 
-def connect():
+def connect(graph_name=None):
     host = os.getenv("FALKORDB_HOST", "localhost")
     port = int(os.getenv("FALKORDB_PORT", "6379"))
     db = FalkorDB(
@@ -26,7 +26,7 @@ def connect():
             "FALKORDB_PORT, FALKORDB_USERNAME, FALKORDB_PASSWORD, and "
             "FALKORDB_SSL in this terminal."
         ) from exc
-    return db.select_graph(GRAPH)
+    return db.select_graph(graph_name or GRAPH)
 
 
 def _chunks(items, n=500):

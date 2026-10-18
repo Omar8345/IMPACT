@@ -11,6 +11,11 @@ def get_graph():
     return _g
 
 
+def set_graph(g):
+    global _g
+    _g = g
+
+
 def pytest_id(fid):
     file, _, qual = fid.partition("::")
     return f"{file}::{qual.replace('.', '::')}"

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: impact-analyzer
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn hosted_app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: FALKORDB_HOST
+        sync: false
+      - key: FALKORDB_PORT
+        value: "6379"
+      - key: FALKORDB_USERNAME
+        sync: false
+      - key: FALKORDB_PASSWORD
+        sync: false
+      - key: FALKORDB_SSL
+        value: "true"
+      - key: IMPACT_HOSTED_LLM
+        value: "false"
+      - key: OPENROUTER_API_KEY
+        sync: false

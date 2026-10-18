@@ -1,3 +1,5 @@
 falkordb
 mcp
 pytest>=8,<10
+fastapi
+uvicorn[standard]

@@ -38,7 +38,7 @@ def cmd_review(a):
     return produce_review(a.repo, diff, a)
 
 
-def produce_review(repo, diff, a, base_repo=None, base_sha=None, head_sha=None):
+def produce_review(repo, diff, a, base_repo=None, base_sha=None, head_sha=None, graph_obj=None):
     funcs, _ = parse_repo(repo)
     changed = changed_functions(funcs, parse_diff(diff))
     if not changed:
@@ -84,7 +84,7 @@ def produce_review(repo, diff, a, base_repo=None, base_sha=None, head_sha=None):
         report = review.deterministic_report(changed, impacts, repo, test_run)
         if comparison is not None:
             report += "\n\n" + review.comparison_section(comparison)
-    g = graph.connect()
+    g = graph_obj or graph.connect()
     contexts = [company.context(g, f.id) for f in changed]
     company_note = company.report(contexts)
     if company_note:
