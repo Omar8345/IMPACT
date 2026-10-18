@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "controlled_benchmark": {
+    "kind": "controlled_mutations",
+    "scenarios": 15,
+    "fixture_tests": 24,
+    "failure_revealing_test_instances_selected": 29,
+    "failure_revealing_test_instances_total": 29,
+    "failure_recall": 1.0,
+    "test_reduction": 0.6917,
+    "source": "evaluation/results.json"
+  },
+  "real_prs": [
+    {
+      "repository": "psf/requests",
+      "pr_url": "https://github.com/psf/requests/pull/6644",
+      "pr_number": 6644,
+      "analyzed_commit": "60389df6d69ce833164696dcf36cbb43336d3426",
+      "functions_indexed": null,
+      "call_edges_indexed": null,
+      "index_counts_note": "The committed Requests report records the selected graph paths but not total index counts.",
+      "collected_full_suite_cases": null,
+      "selected_targets": 1,
+      "expanded_selected_cases": 1,
+      "selected_pass": 1,
+      "selected_fail": 0,
+      "selected_skip": 0,
+      "selection_reduction": null,
+      "selection_reduction_note": "No reliable full-suite collection count was recorded.",
+      "full_suite_status": "not_run",
+      "full_suite_reason": "A full-suite comparison was not completed.",
+      "failure_recall": null,
+      "failure_recall_reason": "No valid complete full suite with a genuine failing test is available.",
+      "selected_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"
+    },
+    {
+      "repository": "httpie/cli",
+      "pr_url": "https://github.com/httpie/cli/pull/1327",
+      "pr_number": 1327,
+      "analyzed_commit": "17ec3be6512919fafae4300083e03580d4a00ff2",
+      "functions_indexed": 956,
+      "call_edges_indexed": 876,
+      "collected_full_suite_cases": 1012,
+      "selected_targets": 18,
+      "expanded_selected_cases": 43,
+      "selected_pass": 34,
+      "selected_fail": 0,
+      "selected_skip": 9,
+      "selection_reduction": 0.9575,
+      "selection_reduction_note": "1 - 43 / 1012; selected cases are not a full-suite failure-recall measurement.",
+      "full_suite_status": "environment_blocked",
+      "full_suite_reason": "The unsandboxed run showed failures requiring dependency/environment review; no valid complete baseline was established.",
+      "failure_recall": null,
+      "failure_recall_reason": "Without a valid complete full suite, failure recall is not computable.",
+      "remote_skip_reason": "Nine cases requiring the remote pie.dev service were skipped.",
+      "selected_test_outcomes": "34 passed, 9 skipped, 0 failed"
+    }
+  ]
+}
