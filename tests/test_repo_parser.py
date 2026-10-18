@@ -83,6 +83,48 @@ class ParserTests(unittest.TestCase):
             _, edges = parse_repo(root)
             self.assertIn(("example.py::outer", "example.py::outer.helper"), edges)
 
+    def test_method_on_locally_constructed_imported_object(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "adapter.py").write_text(
+                "class HTTPAdapter:\n"
+                "    def request_url(self):\n"
+                "        return '/'\n"
+            )
+            (root / "test_adapter.py").write_text(
+                "import adapter\n"
+                "def test_request_url():\n"
+                "    a = adapter.HTTPAdapter()\n"
+                "    assert a.request_url() == '/'\n"
+            )
+            _, edges = parse_repo(root)
+            self.assertIn(("test_adapter.py::test_request_url",
+                           "adapter.py::HTTPAdapter.request_url"), edges)
+
+    def test_reassigned_or_ambiguous_object_is_not_connected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "example.py").write_text(
+                "class Adapter:\n"
+                "    def request_url(self):\n"
+                "        pass\n"
+                "def reassigned():\n"
+                "    a = Adapter()\n"
+                "    a = object()\n"
+                "    a.request_url()\n"
+                "def conditional(flag):\n"
+                "    if flag:\n"
+                "        a = Adapter()\n"
+                "    else:\n"
+                "        a = object()\n"
+                "    a.request_url()\n"
+            )
+            _, edges = parse_repo(root)
+            self.assertNotIn(("example.py::reassigned",
+                              "example.py::Adapter.request_url"), edges)
+            self.assertNotIn(("example.py::conditional",
+                              "example.py::Adapter.request_url"), edges)
+
 
 if __name__ == "__main__":
     unittest.main()

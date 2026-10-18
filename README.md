@@ -132,8 +132,9 @@ instance; it is read-only.
 tests, prints a Markdown review, and saves the HTML explorer and Markdown report.
 It tracks edited lines rather than marking a whole diff hunk as changed. Tests
 edited directly in the diff are included in the selected test run too.
-The expected demo run reports one test error, one failure, and one pass. The
-review command still completes so the report can be inspected.
+The expected demo run reports two failed tests and one pass with pytest. If
+pytest is unavailable, unittest reports one error, one failure, and one pass.
+The review command still completes so the report can be inspected.
 
 ### Add the engineering company context
 
@@ -170,9 +171,23 @@ python main.py review /path/to/repo --base main --run-tests \
 ```
 
 Use a dedicated `FALKORDB_GRAPH` value or database instance when switching
-repositories. Indexing replaces that graph. If pytest is installed, the agent
-runs exact pytest test IDs. Without pytest, it runs reachable `unittest` class
-methods with the Python standard library; plain pytest test functions need pytest.
+repositories. Indexing replaces that graph. The installed `pytest` runner runs
+exact selected test IDs for pytest functions and `unittest` methods. If pytest
+is unavailable, IMPACT falls back to the Python standard library for `unittest`
+class methods. Install the target repository's own dependencies before using
+`--run-tests`; IMPACT does not install or infer them automatically. It places the
+checkout's `src/` and root on the test process's Python path so tests import the
+code being reviewed.
+
+For another Python test runner, supply a command template. IMPACT runs one
+selected test at a time without a shell. `{test}` is a pytest-style ID and
+`{unittest}` is a dotted `unittest` class method; `{python}` is this virtual
+environment's Python executable:
+
+```bash
+python main.py review /path/to/repo --base main --run-tests \
+  --test-command '{python} -m unittest -v {unittest}'
+```
 
 ## Review a GitHub PR by URL
 
@@ -211,6 +226,13 @@ not uploaded. If the PR head changes while it is being fetched, rerun the comman
 Current PR analysis covers functions present in the new checkout; fully deleted
 or renamed functions need a future comparison of both code versions.
 
+For a second example, [Requests PR #6644](https://github.com/psf/requests/pull/6644)
+changes `HTTPAdapter.request_url` and adds a direct test. IMPACT indexed 645
+functions in that repository, found `HTTPAdapter.send` and the new test as
+callers, and ran the selected test successfully after Requests' runtime
+dependencies were installed. This is a small real PR; the checkout demo above
+shows the longer call path and failing tests.
+
 ## Optional AI graph-tool use with OpenRouter
 
 OpenRouter's `openrouter/free` route is the code default. Availability and
@@ -247,8 +269,9 @@ model and the Cypher queries used by the product. [learn_it.md](docs/learn_it.md
 is a plain English walkthrough and a set of judge questions to practice.
 
 The parser resolves explicit Python imports, local functions, module aliases,
-constructors, nested helpers, and `self`/`cls` calls. It does not infer dynamic
-dispatch, reflection, monkey-patching, or runtime imports. Results are potential impact,
+constructors, nested helpers, `self`/`cls` calls, and methods on objects clearly
+constructed in a local variable. It does not infer general dynamic dispatch,
+reflection, monkey-patching, or runtime imports. Results are potential impact,
 not a claim that every reachable caller breaks.
 
 ## Development checks

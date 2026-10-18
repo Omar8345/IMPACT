@@ -55,7 +55,8 @@ def produce_review(repo, diff, a):
             print(f"Optional AI review unavailable: {exc}\nUsing the graph review instead.\n")
     test_run = (review.run_selected_tests(
         repo, impacts, direct_tests=direct_tests,
-        priority_test=decision["priority_test"] if decision else None) if a.run_tests else None)
+        priority_test=decision["priority_test"] if decision else None,
+        test_command=a.test_command) if a.run_tests else None)
     if decision:
         report = decision["report"].rstrip()
         report += "\n\n" + review.graph_evidence_section(changed, impacts)
@@ -136,6 +137,7 @@ def main():
     s.add_argument("--diff-file", help="use a saved unified diff instead of git")
     s.add_argument("--llm", action="store_true", help="let an OpenRouter model use graph tools (needs OPENROUTER_API_KEY)")
     s.add_argument("--run-tests", action="store_true", help="run graph-selected tests (pytest or unittest)")
+    s.add_argument("--test-command", help="custom runner with {test} or {unittest}; requires --run-tests")
     s.add_argument("--hops", type=int, default=4)
     s.add_argument("--html", default="impact.html")
     s.add_argument("--report", help="save Markdown review for a PR comment or artifact")
@@ -145,6 +147,7 @@ def main():
     s.add_argument("url", help="https://github.com/owner/repo/pull/123")
     s.add_argument("--llm", action="store_true", help="let an OpenRouter model use graph tools")
     s.add_argument("--run-tests", action="store_true", help="run selected tests from the PR checkout")
+    s.add_argument("--test-command", help="custom runner with {test} or {unittest}; requires --run-tests")
     s.add_argument("--post-comment", action="store_true", help="post the report to the PR with gh authentication")
     s.add_argument("--company-file", help="manifest path inside the PR checkout")
     s.add_argument("--hops", type=int, default=4)
@@ -163,6 +166,8 @@ def main():
     s.set_defaults(fn=cmd_company)
 
     a = p.parse_args()
+    if getattr(a, "test_command", None) and not a.run_tests:
+        p.error("--test-command requires --run-tests")
     a.fn(a)
 
 

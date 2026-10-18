@@ -2,6 +2,7 @@
 import json
 import importlib.util
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -43,7 +44,24 @@ def selected_test_ids(impacts):
                    for affected in impacts.values() for a in affected if a["is_test"]})
 
 
-def run_selected_tests(repo, impacts, timeout=180, direct_tests=(), priority_test=None):
+def _test_env(repo):
+    root = Path(repo).resolve()
+    paths = [str(root / "src"), str(root)]
+    if os.environ.get("PYTHONPATH"):
+        paths.append(os.environ["PYTHONPATH"])
+    return {**os.environ, "PYTHONPATH": os.pathsep.join(paths)}
+
+
+def _unittest_id(node_id):
+    parts = node_id.split("::")
+    if len(parts) < 3:
+        return None
+    module = Path(parts[0]).with_suffix("").as_posix().replace("/", ".")
+    return ".".join([module, *parts[1:]])
+
+
+def run_selected_tests(repo, impacts, timeout=180, direct_tests=(),
+                       priority_test=None, test_command=None):
     """Run graph-reached and directly changed tests, only when requested."""
     node_ids = sorted(set(selected_test_ids(impacts)) |
                       {tools.pytest_id(fid) for fid in direct_tests})
@@ -52,12 +70,14 @@ def run_selected_tests(repo, impacts, timeout=180, direct_tests=(), priority_tes
         node_ids.insert(0, priority_test)
     if not node_ids:
         return {"node_ids": [], "statuses": {}, "returncode": 0, "output": "No reachable tests."}
+    if test_command:
+        return _run_custom_targets(repo, node_ids, test_command, timeout)
     if importlib.util.find_spec("pytest") is None:
         return _run_unittest_targets(repo, node_ids, timeout)
-    command = [sys.executable, "-m", "pytest", "-v", "--tb=short", *node_ids]
+    command = [sys.executable, "-m", "pytest", "-v", "--tb=short", "--color=no", *node_ids]
     try:
         result = subprocess.run(command, cwd=repo, text=True, capture_output=True,
-                                timeout=timeout, check=False)
+                                timeout=timeout, check=False, env=_test_env(repo))
         output = result.stdout + result.stderr
         statuses = {}
         for line in result.stdout.splitlines():
@@ -69,6 +89,11 @@ def run_selected_tests(repo, impacts, timeout=180, direct_tests=(), priority_tes
                         statuses[node_id] = "failed"
                     elif " ERROR" in line:
                         statuses[node_id] = "error"
+                    elif " SKIPPED" in line:
+                        statuses[node_id] = "skipped"
+        if result.returncode:
+            for node_id in node_ids:
+                statuses.setdefault(node_id, "error")
         return {"node_ids": node_ids, "statuses": statuses,
                 "returncode": result.returncode, "output": output}
     except subprocess.TimeoutExpired:
@@ -80,18 +105,16 @@ def _run_unittest_targets(repo, node_ids, timeout):
     """Fallback for unittest class methods when pytest is not installed."""
     statuses, output, worst_code = {}, [], 0
     for node_id in node_ids:
-        parts = node_id.split("::")
-        if len(parts) < 3:
+        target = _unittest_id(node_id)
+        if target is None:
             statuses[node_id] = "unknown"
             output.append(f"Cannot run {node_id} with unittest; install pytest for function tests.")
             worst_code = max(worst_code, 2)
             continue
-        module = Path(parts[0]).with_suffix("").as_posix().replace("/", ".")
-        target = ".".join([module, *parts[1:]])
         try:
             result = subprocess.run([sys.executable, "-m", "unittest", "-v", target],
                                     cwd=repo, text=True, capture_output=True, timeout=timeout,
-                                    check=False)
+                                    check=False, env=_test_env(repo))
         except subprocess.TimeoutExpired:
             statuses[node_id] = "error"
             output.append(f"{target}: timed out after {timeout}s")
@@ -106,12 +129,49 @@ def _run_unittest_targets(repo, node_ids, timeout):
             "returncode": worst_code, "output": "\n".join(output)}
 
 
+def _run_custom_targets(repo, node_ids, template, timeout):
+    """Run selected IDs with an explicitly supplied command, without a shell."""
+    command = shlex.split(template)
+    if not command or not any("{test}" in part or "{unittest}" in part for part in command):
+        raise ValueError("--test-command must contain {test} or {unittest}.")
+    statuses, output, worst_code = {}, [], 0
+    for node_id in node_ids:
+        unittest_id = _unittest_id(node_id)
+        if unittest_id is None and any("{unittest}" in part for part in command):
+            statuses[node_id] = "unknown"
+            output.append(f"Cannot convert {node_id} to a unittest class method.")
+            worst_code = max(worst_code, 2)
+            continue
+        args = [part.replace("{python}", sys.executable)
+                    .replace("{test}", node_id)
+                    .replace("{unittest}", unittest_id or "") for part in command]
+        try:
+            result = subprocess.run(args, cwd=repo, text=True, capture_output=True,
+                                    timeout=timeout, check=False, env=_test_env(repo))
+        except subprocess.TimeoutExpired:
+            statuses[node_id] = "error"
+            output.append(f"{node_id}: timed out after {timeout}s")
+            worst_code = max(worst_code, 124)
+            continue
+        except FileNotFoundError as exc:
+            statuses[node_id] = "error"
+            output.append(f"{node_id}: test command not found: {exc.filename}")
+            worst_code = max(worst_code, 127)
+            continue
+        statuses[node_id] = "passed" if result.returncode == 0 else "failed"
+        output.append(f"$ {shlex.join(args)}\n{result.stdout}{result.stderr}")
+        worst_code = max(worst_code, result.returncode)
+    return {"node_ids": node_ids, "statuses": statuses,
+            "returncode": worst_code, "output": "\n".join(output)}
+
+
 def verification_section(test_run):
     if test_run is None:
         return ""
     statuses = test_run["statuses"]
+    count = len(test_run["node_ids"])
     lines = ["## Selected test run", "",
-             f"Ran {len(test_run['node_ids'])} selected tests "
+             f"Ran {count} selected {'test' if count == 1 else 'tests'} "
              f"(exit code {test_run['returncode']}).", ""]
     for node_id in test_run["node_ids"]:
         lines.append(f"- {statuses.get(node_id, 'unknown').upper()}: `{node_id}`")

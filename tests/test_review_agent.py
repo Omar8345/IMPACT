@@ -29,6 +29,15 @@ class ReviewAgentTests(unittest.TestCase):
         self.assertEqual(result["node_ids"], ["tests/test_checkout.py::CheckoutTests::test_checkout_normal_coupon"])
         self.assertEqual(result["statuses"][result["node_ids"][0]], "passed")
 
+    def test_custom_runner_accepts_unittest_targets(self):
+        repo = Path(__file__).parents[1] / "demo_checkout"
+        direct = ["tests/test_checkout.py::CheckoutTests.test_checkout_normal_coupon"]
+        result = review.run_selected_tests(
+            repo, {}, direct_tests=direct,
+            test_command="{python} -m unittest -v {unittest}")
+        self.assertEqual(result["returncode"], 0)
+        self.assertEqual(result["statuses"][result["node_ids"][0]], "passed")
+
     def test_ai_priority_runs_first_but_keeps_other_selected_tests(self):
         impact = {"shop/pricing.py::apply_coupon": [
             {"id": "tests/test_checkout.py::CheckoutTests.test_checkout_large_coupon", "is_test": True},
