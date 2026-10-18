@@ -56,7 +56,8 @@ def produce_review(repo, diff, a):
     test_run = (review.run_selected_tests(
         repo, impacts, direct_tests=direct_tests,
         priority_test=decision["priority_test"] if decision else None,
-        test_command=a.test_command) if a.run_tests else None)
+        test_command=a.test_command,
+        restricted_env=getattr(a, "restricted_env", False)) if a.run_tests else None)
     if decision:
         report = decision["report"].rstrip()
         report += "\n\n" + review.graph_evidence_section(changed, impacts)
@@ -80,6 +81,7 @@ def produce_review(repo, diff, a):
 
 def cmd_pr(a):
     pr = github_pr.get_pr(a.url)
+    a.restricted_env = True
     print(f"Fetching {pr['url']} at {pr['head_sha'][:12]}...", flush=True)
     with github_pr.checkout_pr(pr) as (repo, diff):
         funcs, edges = parse_repo(repo)

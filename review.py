@@ -44,12 +44,19 @@ def selected_test_ids(impacts):
                    for affected in impacts.values() for a in affected if a["is_test"]})
 
 
-def _test_env(repo):
+def _test_env(repo, restricted=False):
     root = Path(repo).resolve()
     paths = [str(root / "src"), str(root)]
-    if os.environ.get("PYTHONPATH"):
-        paths.append(os.environ["PYTHONPATH"])
-    return {**os.environ, "PYTHONPATH": os.pathsep.join(paths)}
+    if not restricted:
+        if os.environ.get("PYTHONPATH"):
+            paths.append(os.environ["PYTHONPATH"])
+        return {**os.environ, "PYTHONPATH": os.pathsep.join(paths)}
+    allowed = ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TMPDIR", "TEMP", "TMP",
+               "SYSTEMROOT", "WINDIR", "PATHEXT")
+    env = {key: os.environ[key] for key in allowed if key in os.environ}
+    env.update({"HOME": str(root), "PYTHONPATH": os.pathsep.join(paths),
+                "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1"})
+    return env
 
 
 def _unittest_id(node_id):
@@ -61,7 +68,7 @@ def _unittest_id(node_id):
 
 
 def run_selected_tests(repo, impacts, timeout=180, direct_tests=(),
-                       priority_test=None, test_command=None):
+                       priority_test=None, test_command=None, restricted_env=False):
     """Run graph-reached and directly changed tests, only when requested."""
     node_ids = sorted(set(selected_test_ids(impacts)) |
                       {tools.pytest_id(fid) for fid in direct_tests})
@@ -71,26 +78,38 @@ def run_selected_tests(repo, impacts, timeout=180, direct_tests=(),
     if not node_ids:
         return {"node_ids": [], "statuses": {}, "returncode": 0, "output": "No reachable tests."}
     if test_command:
-        return _run_custom_targets(repo, node_ids, test_command, timeout)
+        return _run_custom_targets(repo, node_ids, test_command, timeout, restricted_env)
     if importlib.util.find_spec("pytest") is None:
-        return _run_unittest_targets(repo, node_ids, timeout)
+        return _run_unittest_targets(repo, node_ids, timeout, restricted_env)
     command = [sys.executable, "-m", "pytest", "-v", "--tb=short", "--color=no", *node_ids]
     try:
         result = subprocess.run(command, cwd=repo, text=True, capture_output=True,
-                                timeout=timeout, check=False, env=_test_env(repo))
+                                timeout=timeout, check=False, env=_test_env(repo, restricted_env))
         output = result.stdout + result.stderr
-        statuses = {}
+        outcomes = {node_id: set() for node_id in node_ids}
         for line in result.stdout.splitlines():
             for node_id in node_ids:
-                if line.startswith(node_id + " "):
+                if line.startswith(node_id + " ") or line.startswith(node_id + "["):
                     if " PASSED" in line:
-                        statuses[node_id] = "passed"
+                        outcomes[node_id].add("passed")
                     elif " FAILED" in line:
-                        statuses[node_id] = "failed"
+                        outcomes[node_id].add("failed")
                     elif " ERROR" in line:
-                        statuses[node_id] = "error"
+                        outcomes[node_id].add("error")
                     elif " SKIPPED" in line:
-                        statuses[node_id] = "skipped"
+                        outcomes[node_id].add("skipped")
+        statuses = {}
+        for node_id, seen in outcomes.items():
+            if "error" in seen:
+                statuses[node_id] = "error"
+            elif "failed" in seen:
+                statuses[node_id] = "failed"
+            elif "passed" in seen and "skipped" in seen:
+                statuses[node_id] = "partial"
+            elif "passed" in seen:
+                statuses[node_id] = "passed"
+            elif "skipped" in seen:
+                statuses[node_id] = "skipped"
         if result.returncode:
             for node_id in node_ids:
                 statuses.setdefault(node_id, "error")
@@ -101,7 +120,7 @@ def run_selected_tests(repo, impacts, timeout=180, direct_tests=(),
                 "output": f"Selected tests exceeded the {timeout}s time limit."}
 
 
-def _run_unittest_targets(repo, node_ids, timeout):
+def _run_unittest_targets(repo, node_ids, timeout, restricted_env=False):
     """Fallback for unittest class methods when pytest is not installed."""
     statuses, output, worst_code = {}, [], 0
     for node_id in node_ids:
@@ -114,7 +133,7 @@ def _run_unittest_targets(repo, node_ids, timeout):
         try:
             result = subprocess.run([sys.executable, "-m", "unittest", "-v", target],
                                     cwd=repo, text=True, capture_output=True, timeout=timeout,
-                                    check=False, env=_test_env(repo))
+                                    check=False, env=_test_env(repo, restricted_env))
         except subprocess.TimeoutExpired:
             statuses[node_id] = "error"
             output.append(f"{target}: timed out after {timeout}s")
@@ -129,7 +148,7 @@ def _run_unittest_targets(repo, node_ids, timeout):
             "returncode": worst_code, "output": "\n".join(output)}
 
 
-def _run_custom_targets(repo, node_ids, template, timeout):
+def _run_custom_targets(repo, node_ids, template, timeout, restricted_env=False):
     """Run selected IDs with an explicitly supplied command, without a shell."""
     command = shlex.split(template)
     if not command or not any("{test}" in part or "{unittest}" in part for part in command):
@@ -147,7 +166,7 @@ def _run_custom_targets(repo, node_ids, template, timeout):
                     .replace("{unittest}", unittest_id or "") for part in command]
         try:
             result = subprocess.run(args, cwd=repo, text=True, capture_output=True,
-                                    timeout=timeout, check=False, env=_test_env(repo))
+                                    timeout=timeout, check=False, env=_test_env(repo, restricted_env))
         except subprocess.TimeoutExpired:
             statuses[node_id] = "error"
             output.append(f"{node_id}: timed out after {timeout}s")

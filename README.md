@@ -10,7 +10,9 @@ produce its impact paths or test selection without FalkorDB.
 > **Larger real PR:** On [HTTPie #1327](https://github.com/httpie/cli/pull/1327),
 > IMPACT indexed 956 functions from an application PR spanning 9 files. From a
 > changed session constructor, FalkorDB found 21 possible callers, including 13
-> tests, with paths up to 4 calls long. Those tests were identified but not run.
+> tests, with paths up to 4 calls long. Across the PR, 18 selected test targets
+> expanded to 43 cases:
+> **34 passed, 9 remote-service cases skipped, 0 failed**.
 > [Explore the graph](https://omar8345.github.io/IMPACT/httpie-pr-1327/) ·
 > [Read the report](docs/httpie-pr-1327/impact-report.md)
 
@@ -239,9 +241,10 @@ Current PR analysis covers functions present in the new checkout; fully deleted
 or renamed functions need a future comparison of both code versions.
 
 The Requests example requires the target project's runtime dependencies to run
-its tests. The HTTPie example shows a larger change and graph-selected tests;
-those tests were not executed for the published report. The synthetic checkout
-demo above shows a longer path and failing tests without extra target dependencies.
+its tests. The HTTPie example shows a larger change and an isolated test run;
+remote-service cases were skipped because outside network access was disabled.
+The synthetic checkout demo above shows a longer path and failing tests without
+extra target dependencies.
 
 ## Optional AI graph-tool use with OpenRouter
 

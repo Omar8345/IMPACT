@@ -115,6 +115,15 @@
         color: var(--muted);
         margin: 8px 0 0 37px;
       }
+      .header-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 11px 0 0 37px;
+        font-size: 11px;
+      }
+      .header-links[hidden] { display: none; }
+      .header-links a { color: var(--ink); text-underline-offset: 3px; }
       .eyebrow {
         font-size: 10px;
         font-weight: 800;
@@ -176,6 +185,49 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
+      .test-panel {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 12px;
+        margin: -10px 0 22px;
+      }
+      .test-panel[hidden] { display: none; }
+      .test-panel summary {
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .test-panel p {
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+        margin: 8px 0;
+      }
+      .test-list { display: grid; gap: 5px; margin-top: 10px; }
+      .test-list button {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 7px 5px;
+        border: 0;
+        border-top: 1px solid var(--line);
+        background: transparent;
+        text-align: left;
+        font-size: 10px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .test-list button:hover { color: var(--accent); }
+      .test-result {
+        flex: none;
+        color: var(--test);
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .test-result.passed { color: var(--pass); }
+      .test-result.failed, .test-result.error { color: var(--accent); }
       .ai-panel {
         padding: 14px;
         border: 1px solid var(--test);
@@ -310,6 +362,18 @@
         font-size: 10px;
         color: var(--muted);
       }
+      .result-strip {
+        margin: 0 0 15px;
+        padding: 11px 14px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--pass);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .result-strip[hidden] { display: none; }
       .canvas {
         min-height: 520px;
         overflow: visible;
@@ -470,11 +534,17 @@
         </button>
       </div>
       <p>Trace a code change through callers to the tests that exercise it.</p>
+      <nav class="header-links" id="report-links" aria-label="Report links" hidden></nav>
     </header>
     <main>
       <aside>
         <div class="eyebrow">Analysis / summary</div>
         <div class="metric" id="metrics"></div>
+        <details class="test-panel" id="test-panel" hidden>
+          <summary id="test-heading">Selected tests</summary>
+          <p id="test-summary"></p>
+          <div class="test-list" id="test-list"></div>
+        </details>
         <section class="ai-panel" id="ai-panel" hidden>
           <h2>Agent / Review priority</h2>
           <p id="ai-reason"></p>
@@ -499,15 +569,15 @@
         <p class="note">
           <b>What this means</b><br />Call paths show possible impact. A test
           edited in the PR is selected directly even if no static call path
-          reaches it. Violet means not run; green means passed and red means
-          failed.
+          reaches it. Violet means not run, skipped, or partly run; green means
+          passed and red means failed.
         </p>
       </aside>
       <section class="workspace">
         <div class="intro">
           <div>
             <h2>How the change spreads</h2>
-            <p>
+            <p id="graph-intro">
               Follow arrows from changed code to callers. Select a card to
               inspect its path.
             </p>
@@ -526,6 +596,7 @@
           ><span class="step">→ Callers</span
           ><span class="step">→ Tests</span>
         </div>
+        <div class="result-strip" id="result-strip" hidden></div>
         <div class="canvas">
           <svg
             id="graph"
@@ -560,7 +631,22 @@
       themeButton.addEventListener("click", () =>
         setTheme(root.dataset.theme === "dark" ? "light" : "dark"),
       );
-      const data = {"nodes": [{"id": "httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure", "file": "cookies.py", "name": "HTTPieCookiePolicy.return_ok_secure", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure"]}, {"id": "httpie/cookies.py::HTTPieCookiePolicy._is_local_host", "file": "cookies.py", "name": "HTTPieCookiePolicy._is_local_host", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/cookies.py::HTTPieCookiePolicy._is_local_host"]}, {"id": "httpie/sessions.py::Session.__init__", "file": "sessions.py", "name": "Session.__init__", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/sessions.py::Session.__init__"]}, {"id": "tests/conftest.py::_remote_httpbin_available", "file": "conftest.py", "name": "_remote_httpbin_available", "kind": "change", "changed": true, "depth": 0, "path": ["tests/conftest.py::_remote_httpbin_available"]}, {"id": "tests/conftest.py::remote_httpbin", "file": "conftest.py", "name": "remote_httpbin", "kind": "change", "changed": true, "depth": 0, "path": ["tests/conftest.py::remote_httpbin"]}, {"id": "tests/test_cookie_on_redirects.py::_stringify", "file": "test_cookie_on_redirects.py", "name": "_stringify", "kind": "change", "changed": true, "depth": 0, "path": ["tests/test_cookie_on_redirects.py::_stringify"]}, {"id": "tests/test_sessions.py::test_secure_cookies_on_localhost", "file": "test_sessions.py", "name": "test_secure_cookies_on_localhost", "kind": "test", "changed": true, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_secure_cookies_on_localhost"]}, {"id": "tests/utils/http_server.py::get_cookies", "file": "http_server.py", "name": "get_cookies", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::get_cookies"]}, {"id": "tests/utils/http_server.py::set_cookies", "file": "http_server.py", "name": "set_cookies", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::set_cookies"]}, {"id": "tests/utils/http_server.py::_http_server", "file": "http_server.py", "name": "_http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::_http_server"]}, {"id": "tests/utils/http_server.py::http_server", "file": "http_server.py", "name": "http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::http_server"]}, {"id": "tests/utils/http_server.py::localhost_http_server", "file": "http_server.py", "name": "localhost_http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::localhost_http_server"]}, {"id": "httpie/sessions.py::get_httpie_session", "file": "sessions.py", "name": "get_httpie_session", "kind": "function", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session"]}, {"id": "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj", "file": "test_sessions.py", "name": "TestExpiredCookies.test_removes_expired_cookies_from_session_obj", "kind": "test", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj"]}, {"id": "tests/test_sessions.py::open_session", "file": "test_sessions.py", "name": "open_session", "kind": "function", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session"]}, {"id": "httpie/client.py::collect_messages", "file": "client.py", "name": "collect_messages", "kind": "function", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/client.py::collect_messages"]}, {"id": "httpie/manager/tasks/sessions.py::upgrade_session", "file": "sessions.py", "name": "upgrade_session", "kind": "function", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session"]}, {"id": "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies", "file": "test_sessions.py", "name": "test_cookie_security_warnings_on_raw_cookies", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies"]}, {"id": "tests/test_sessions.py::test_headers_old_layout_warning", "file": "test_sessions.py", "name": "test_headers_old_layout_warning", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_headers_old_layout_warning"]}, {"id": "tests/test_sessions.py::test_old_session_cookie_layout_loading", "file": "test_sessions.py", "name": "test_old_session_cookie_layout_loading", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_cookie_layout_loading"]}, {"id": "tests/test_sessions.py::test_old_session_cookie_layout_warning", "file": "test_sessions.py", "name": "test_old_session_cookie_layout_warning", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_cookie_layout_warning"]}, {"id": "tests/test_sessions.py::test_old_session_header_layout_loading", "file": "test_sessions.py", "name": "test_old_session_header_layout_loading", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_header_layout_loading"]}, {"id": "tests/test_sessions.py::test_old_session_version_saved_as_is", "file": "test_sessions.py", "name": "test_old_session_version_saved_as_is", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_version_saved_as_is"]}, {"id": "tests/test_sessions.py::test_outdated_layout_mixed", "file": "test_sessions.py", "name": "test_outdated_layout_mixed", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_outdated_layout_mixed"]}, {"id": "tests/test_sessions.py::test_session_cookie_layout_preservation", "file": "test_sessions.py", "name": "test_session_cookie_layout_preservation", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_cookie_layout_preservation"]}, {"id": "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies", "file": "test_sessions.py", "name": "test_session_cookie_layout_preservation_on_new_cookies", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies"]}, {"id": "tests/test_sessions.py::test_session_header_layout_preservation", "file": "test_sessions.py", "name": "test_session_header_layout_preservation", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_header_layout_preservation"]}, {"id": "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers", "file": "test_sessions.py", "name": "test_session_header_layout_preservation_on_new_headers", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers"]}, {"id": "httpie/core.py::program", "file": "core.py", "name": "program", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/client.py::collect_messages", "httpie/core.py::program"]}, {"id": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "file": "sessions.py", "name": "cli_upgrade_all_sessions", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions"]}, {"id": "httpie/manager/tasks/sessions.py::cli_upgrade_session", "file": "sessions.py", "name": "cli_upgrade_session", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_session"]}, {"id": "httpie/manager/tasks/sessions.py::cli_sessions", "file": "sessions.py", "name": "cli_sessions", "kind": "function", "changed": false, "depth": 4, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "httpie/manager/tasks/sessions.py::cli_sessions"]}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_cookie", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie"]}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_cookie_in_session", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session"]}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_headers", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers"]}, {"id": "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect", "file": "test_cookie_on_redirects.py", "name": "test_saved_session_cookies_on_redirect", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect"]}, {"id": "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session", "file": "test_cookie_on_redirects.py", "name": "test_saved_user_set_cookie_in_session", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session"]}], "edges": [{"from": "httpie/client.py::collect_messages", "to": "httpie/core.py::program"}, {"from": "httpie/cookies.py::HTTPieCookiePolicy._is_local_host", "to": "httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure"}, {"from": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "to": "httpie/manager/tasks/sessions.py::cli_sessions"}, {"from": "httpie/manager/tasks/sessions.py::upgrade_session", "to": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions"}, {"from": "httpie/manager/tasks/sessions.py::upgrade_session", "to": "httpie/manager/tasks/sessions.py::cli_upgrade_session"}, {"from": "httpie/sessions.py::Session.__init__", "to": "httpie/sessions.py::get_httpie_session"}, {"from": "httpie/sessions.py::Session.__init__", "to": "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj"}, {"from": "httpie/sessions.py::Session.__init__", "to": "tests/test_sessions.py::open_session"}, {"from": "httpie/sessions.py::get_httpie_session", "to": "httpie/client.py::collect_messages"}, {"from": "httpie/sessions.py::get_httpie_session", "to": "httpie/manager/tasks/sessions.py::upgrade_session"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_headers_old_layout_warning"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_cookie_layout_loading"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_cookie_layout_warning"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_header_layout_loading"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_version_saved_as_is"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_outdated_layout_mixed"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_secure_cookies_on_localhost"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_cookie_layout_preservation"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_header_layout_preservation"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers"}, {"from": "tests/utils/http_server.py::_http_server", "to": "tests/utils/http_server.py::http_server"}, {"from": "tests/utils/http_server.py::_http_server", "to": "tests/utils/http_server.py::localhost_http_server"}], "ai": null, "company": []};
+      const data = {"nodes": [{"id": "httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure", "file": "cookies.py", "name": "HTTPieCookiePolicy.return_ok_secure", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure"]}, {"id": "httpie/cookies.py::HTTPieCookiePolicy._is_local_host", "file": "cookies.py", "name": "HTTPieCookiePolicy._is_local_host", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/cookies.py::HTTPieCookiePolicy._is_local_host"]}, {"id": "httpie/sessions.py::Session.__init__", "file": "sessions.py", "name": "Session.__init__", "kind": "change", "changed": true, "depth": 0, "path": ["httpie/sessions.py::Session.__init__"]}, {"id": "tests/conftest.py::_remote_httpbin_available", "file": "conftest.py", "name": "_remote_httpbin_available", "kind": "change", "changed": true, "depth": 0, "path": ["tests/conftest.py::_remote_httpbin_available"]}, {"id": "tests/conftest.py::remote_httpbin", "file": "conftest.py", "name": "remote_httpbin", "kind": "change", "changed": true, "depth": 0, "path": ["tests/conftest.py::remote_httpbin"]}, {"id": "tests/test_cookie_on_redirects.py::_stringify", "file": "test_cookie_on_redirects.py", "name": "_stringify", "kind": "change", "changed": true, "depth": 0, "path": ["tests/test_cookie_on_redirects.py::_stringify"]}, {"id": "tests/test_sessions.py::test_secure_cookies_on_localhost", "file": "test_sessions.py", "name": "test_secure_cookies_on_localhost", "kind": "test", "changed": true, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_secure_cookies_on_localhost"], "status": "partial"}, {"id": "tests/utils/http_server.py::get_cookies", "file": "http_server.py", "name": "get_cookies", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::get_cookies"]}, {"id": "tests/utils/http_server.py::set_cookies", "file": "http_server.py", "name": "set_cookies", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::set_cookies"]}, {"id": "tests/utils/http_server.py::_http_server", "file": "http_server.py", "name": "_http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::_http_server"]}, {"id": "tests/utils/http_server.py::http_server", "file": "http_server.py", "name": "http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::http_server"]}, {"id": "tests/utils/http_server.py::localhost_http_server", "file": "http_server.py", "name": "localhost_http_server", "kind": "change", "changed": true, "depth": 0, "path": ["tests/utils/http_server.py::localhost_http_server"]}, {"id": "httpie/sessions.py::get_httpie_session", "file": "sessions.py", "name": "get_httpie_session", "kind": "function", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session"]}, {"id": "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj", "file": "test_sessions.py", "name": "TestExpiredCookies.test_removes_expired_cookies_from_session_obj", "kind": "test", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj"], "status": "passed"}, {"id": "tests/test_sessions.py::open_session", "file": "test_sessions.py", "name": "open_session", "kind": "function", "changed": false, "depth": 1, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session"]}, {"id": "httpie/client.py::collect_messages", "file": "client.py", "name": "collect_messages", "kind": "function", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/client.py::collect_messages"]}, {"id": "httpie/manager/tasks/sessions.py::upgrade_session", "file": "sessions.py", "name": "upgrade_session", "kind": "function", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session"]}, {"id": "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies", "file": "test_sessions.py", "name": "test_cookie_security_warnings_on_raw_cookies", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies"], "status": "passed"}, {"id": "tests/test_sessions.py::test_headers_old_layout_warning", "file": "test_sessions.py", "name": "test_headers_old_layout_warning", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_headers_old_layout_warning"], "status": "passed"}, {"id": "tests/test_sessions.py::test_old_session_cookie_layout_loading", "file": "test_sessions.py", "name": "test_old_session_cookie_layout_loading", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_cookie_layout_loading"], "status": "passed"}, {"id": "tests/test_sessions.py::test_old_session_cookie_layout_warning", "file": "test_sessions.py", "name": "test_old_session_cookie_layout_warning", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_cookie_layout_warning"], "status": "passed"}, {"id": "tests/test_sessions.py::test_old_session_header_layout_loading", "file": "test_sessions.py", "name": "test_old_session_header_layout_loading", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_header_layout_loading"], "status": "passed"}, {"id": "tests/test_sessions.py::test_old_session_version_saved_as_is", "file": "test_sessions.py", "name": "test_old_session_version_saved_as_is", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_old_session_version_saved_as_is"], "status": "passed"}, {"id": "tests/test_sessions.py::test_outdated_layout_mixed", "file": "test_sessions.py", "name": "test_outdated_layout_mixed", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_outdated_layout_mixed"], "status": "passed"}, {"id": "tests/test_sessions.py::test_session_cookie_layout_preservation", "file": "test_sessions.py", "name": "test_session_cookie_layout_preservation", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_cookie_layout_preservation"], "status": "passed"}, {"id": "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies", "file": "test_sessions.py", "name": "test_session_cookie_layout_preservation_on_new_cookies", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies"], "status": "passed"}, {"id": "tests/test_sessions.py::test_session_header_layout_preservation", "file": "test_sessions.py", "name": "test_session_header_layout_preservation", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_header_layout_preservation"], "status": "passed"}, {"id": "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers", "file": "test_sessions.py", "name": "test_session_header_layout_preservation_on_new_headers", "kind": "test", "changed": false, "depth": 2, "path": ["httpie/sessions.py::Session.__init__", "tests/test_sessions.py::open_session", "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers"], "status": "passed"}, {"id": "httpie/core.py::program", "file": "core.py", "name": "program", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/client.py::collect_messages", "httpie/core.py::program"]}, {"id": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "file": "sessions.py", "name": "cli_upgrade_all_sessions", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions"]}, {"id": "httpie/manager/tasks/sessions.py::cli_upgrade_session", "file": "sessions.py", "name": "cli_upgrade_session", "kind": "function", "changed": false, "depth": 3, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_session"]}, {"id": "httpie/manager/tasks/sessions.py::cli_sessions", "file": "sessions.py", "name": "cli_sessions", "kind": "function", "changed": false, "depth": 4, "path": ["httpie/sessions.py::Session.__init__", "httpie/sessions.py::get_httpie_session", "httpie/manager/tasks/sessions.py::upgrade_session", "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "httpie/manager/tasks/sessions.py::cli_sessions"]}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_cookie", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie"], "status": "partial"}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_cookie_in_session", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session"], "status": "partial"}, {"id": "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers", "file": "test_cookie_on_redirects.py", "name": "test_explicit_user_set_headers", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers"], "status": "partial"}, {"id": "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect", "file": "test_cookie_on_redirects.py", "name": "test_saved_session_cookies_on_redirect", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect"], "status": "partial"}, {"id": "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session", "file": "test_cookie_on_redirects.py", "name": "test_saved_user_set_cookie_in_session", "kind": "test", "changed": false, "depth": 1, "path": ["tests/test_cookie_on_redirects.py::_stringify", "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session"], "status": "partial"}], "edges": [{"from": "httpie/client.py::collect_messages", "to": "httpie/core.py::program"}, {"from": "httpie/cookies.py::HTTPieCookiePolicy._is_local_host", "to": "httpie/cookies.py::HTTPieCookiePolicy.return_ok_secure"}, {"from": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions", "to": "httpie/manager/tasks/sessions.py::cli_sessions"}, {"from": "httpie/manager/tasks/sessions.py::upgrade_session", "to": "httpie/manager/tasks/sessions.py::cli_upgrade_all_sessions"}, {"from": "httpie/manager/tasks/sessions.py::upgrade_session", "to": "httpie/manager/tasks/sessions.py::cli_upgrade_session"}, {"from": "httpie/sessions.py::Session.__init__", "to": "httpie/sessions.py::get_httpie_session"}, {"from": "httpie/sessions.py::Session.__init__", "to": "tests/test_sessions.py::TestExpiredCookies.test_removes_expired_cookies_from_session_obj"}, {"from": "httpie/sessions.py::Session.__init__", "to": "tests/test_sessions.py::open_session"}, {"from": "httpie/sessions.py::get_httpie_session", "to": "httpie/client.py::collect_messages"}, {"from": "httpie/sessions.py::get_httpie_session", "to": "httpie/manager/tasks/sessions.py::upgrade_session"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_cookie_in_session"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_explicit_user_set_headers"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_saved_session_cookies_on_redirect"}, {"from": "tests/test_cookie_on_redirects.py::_stringify", "to": "tests/test_cookie_on_redirects.py::test_saved_user_set_cookie_in_session"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_cookie_security_warnings_on_raw_cookies"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_headers_old_layout_warning"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_cookie_layout_loading"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_cookie_layout_warning"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_header_layout_loading"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_old_session_version_saved_as_is"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_outdated_layout_mixed"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_secure_cookies_on_localhost"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_cookie_layout_preservation"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_cookie_layout_preservation_on_new_cookies"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_header_layout_preservation"}, {"from": "tests/test_sessions.py::open_session", "to": "tests/test_sessions.py::test_session_header_layout_preservation_on_new_headers"}, {"from": "tests/utils/http_server.py::_http_server", "to": "tests/utils/http_server.py::http_server"}, {"from": "tests/utils/http_server.py::_http_server", "to": "tests/utils/http_server.py::localhost_http_server"}], "ai": null, "company": [], "case_summary": "34 cases passed \u00b7 9 remote cases skipped", "links": [{"label": "Source PR \u2197", "href": "https://github.com/httpie/cli/pull/1327"}, {"label": "Full Markdown report \u2197", "href": "impact-report.md"}]};
+      if (data.case_summary) {
+        const strip = document.getElementById("result-strip");
+        strip.textContent = "Observed test run: " + data.case_summary;
+        strip.hidden = false;
+      }
+      if (Array.isArray(data.links) && data.links.length) {
+        const links = document.getElementById("report-links");
+        data.links.forEach((entry) => {
+          const anchor = document.createElement("a");
+          anchor.href = entry.href;
+          anchor.textContent = entry.label;
+          links.appendChild(anchor);
+        });
+        links.hidden = false;
+      }
       if (data.company && data.company.length) {
         document.getElementById("company-panel").hidden = false;
         const evidence = document.getElementById("company-evidence");
@@ -614,16 +700,22 @@
         svg = document.getElementById("graph");
       const byId = Object.fromEntries(data.nodes.map((n) => [n.id, n]));
       const maxDepth = Math.max(0, ...data.nodes.map((n) => n.depth));
-      const levels = Array.from({ length: maxDepth + 1 }, (_, d) =>
-        data.nodes
-          .filter((n) => n.depth === d)
-          .sort((a, b) => a.id.localeCompare(b.id)),
-      );
-      let edgeEls = [], nodeEls = {}, selectedId = null, focused = false;
+      let edgeEls = [], nodeEls = {}, selectedId = null;
+      let focused = data.nodes.length > 16;
       function renderGraph() {
         svg.replaceChildren();
         edgeEls = [];
         nodeEls = {};
+        const path = byId[selectedId]?.path || [];
+        const visibleIds = focused ? new Set(path) : null;
+        const visibleNodes = focused
+          ? data.nodes.filter((n) => visibleIds.has(n.id))
+          : data.nodes;
+        const levels = Array.from({ length: maxDepth + 1 }, (_, d) =>
+          visibleNodes
+            .filter((n) => n.depth === d)
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        );
         const widest = Math.max(1, ...levels.map((l) => l.length));
         const canvasWidth = svg.parentElement.clientWidth;
         const requiredWidth = widest * 260 + (widest - 1) * 24 + 70;
@@ -664,7 +756,9 @@
           parent.appendChild(e);
           return e;
         }
-        data.edges.forEach((edge, index) => {
+        data.edges.filter((edge) =>
+          !focused || (visibleIds.has(edge.from) && visibleIds.has(edge.to))
+        ).forEach((edge, index) => {
           const a = pos[edge.from],
             b = pos[edge.to];
           if (!a || !b) return;
@@ -701,7 +795,7 @@
             second.length > 27 ? second.slice(0, 26) + "…" : second,
           ];
         }
-        data.nodes.forEach((n) => {
+        visibleNodes.forEach((n) => {
           const p = pos[n.id],
             g = el("g", {
               class:
@@ -750,6 +844,10 @@
                   ? "CHANGED TEST" +
                     (n.status === "passed"
                       ? " · PASS"
+                      : n.status === "partial"
+                        ? " · PARTIAL"
+                      : n.status === "skipped"
+                        ? " · SKIP"
                       : n.status === "failed"
                         ? " · FAIL"
                         : n.status === "error"
@@ -757,6 +855,10 @@
                           : "")
                   : n.status === "passed"
                     ? "TEST · PASS"
+                    : n.status === "partial"
+                      ? "TEST · PARTIAL"
+                    : n.status === "skipped"
+                      ? "TEST · SKIP"
                     : n.status === "failed"
                       ? "TEST · FAIL"
                       : n.status === "error"
@@ -799,11 +901,17 @@
       document.getElementById("metrics").innerHTML =
         `<div><strong>${affected}</strong><span>reachable nodes</span></div><div><strong>${tests}</strong><span>selected tests</span></div><div><strong>${maxDepth}</strong><span>maximum call steps</span></div><div><strong>${data.nodes.filter((n) => n.kind === "change").length}</strong><span>changed functions</span></div>`;
       const focusButton = document.getElementById("focus-toggle");
-      focusButton.addEventListener("click", () => {
-        focused = !focused;
-        svg.classList.toggle("focused", focused);
+      function updateFocusControl() {
         focusButton.setAttribute("aria-pressed", String(focused));
         focusButton.textContent = focused ? "Show all paths" : "Focus path";
+        document.getElementById("graph-intro").textContent = focused
+          ? "One path is shown. Choose a test in the sidebar or show all paths."
+          : "Follow arrows from changed code to callers. Select a card to inspect its path.";
+      }
+      focusButton.addEventListener("click", () => {
+        focused = !focused;
+        updateFocusControl();
+        renderGraph();
       });
       function select(id) {
         selectedId = id;
@@ -866,12 +974,46 @@
           detail.appendChild(line);
         });
       }
+      const selectedTests = data.nodes
+        .filter((n) => n.kind === "test")
+        .sort((a, b) => a.id.localeCompare(b.id));
+      if (selectedTests.length) {
+        const panel = document.getElementById("test-panel");
+        panel.hidden = false;
+        document.getElementById("test-heading").textContent =
+          `Selected tests (${selectedTests.length})`;
+        const counts = {};
+        selectedTests.forEach((n) => {
+          const status = n.status || "not run";
+          counts[status] = (counts[status] || 0) + 1;
+          const button = document.createElement("button");
+          button.type = "button";
+          const result = document.createElement("span");
+          result.className = `test-result ${n.status || ""}`;
+          result.textContent = status;
+          const name = document.createElement("span");
+          name.textContent = n.name;
+          button.append(result, name);
+          button.title = n.id;
+          button.addEventListener("click", () => {
+            selectedId = n.id;
+            if (focused) renderGraph();
+            else select(n.id);
+          });
+          document.getElementById("test-list").appendChild(button);
+        });
+        document.getElementById("test-summary").textContent =
+          Object.entries(counts).map(([status, count]) => `${count} ${status}`).join(" · ") +
+          (data.case_summary ? ` — ${data.case_summary}` : "");
+      }
       const initial =
         (data.ai && data.nodes.find((n) => pytestId(n.id) === data.ai.priority_test)) ||
+        data.nodes.find((n) => n.kind === "test" && n.changed && n.path.length > 1) ||
         data.nodes
           .filter((n) => n.kind === "test")
           .sort((a, b) => b.depth - a.depth)[0] || data.nodes[0];
       if (initial) selectedId = initial.id;
+      updateFocusControl();
       renderGraph();
       let lastCanvasWidth = svg.parentElement.clientWidth;
       new ResizeObserver(() => {

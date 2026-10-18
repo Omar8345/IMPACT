@@ -1,13 +1,36 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import review
 
 
 class ReviewAgentTests(unittest.TestCase):
+    def test_public_pr_test_environment_excludes_parent_secrets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"FALKORDB_PASSWORD": "secret",
+                                      "OPENROUTER_API_KEY": "secret",
+                                      "PYTHONPATH": "/private/example"}):
+                env = review._test_env(directory, restricted=True)
+        self.assertNotIn("FALKORDB_PASSWORD", env)
+        self.assertNotIn("OPENROUTER_API_KEY", env)
+        self.assertNotIn("/private/example", env["PYTHONPATH"])
+
+    def test_parameterized_pytest_target_can_be_partly_skipped(self):
+        repo = Path(__file__).parents[1] / "demo_checkout"
+        target = "tests/test_checkout.py::CheckoutTests::test_checkout_normal_coupon"
+        output = (f"{target}[local] PASSED [ 50%]\n"
+                  f"{target}[remote] SKIPPED [100%]\n")
+        result = SimpleNamespace(stdout=output, stderr="", returncode=0)
+        with patch.object(review.subprocess, "run", return_value=result):
+            tested = review.run_selected_tests(repo, {}, direct_tests=[
+                "tests/test_checkout.py::CheckoutTests.test_checkout_normal_coupon"])
+        self.assertEqual(tested["statuses"][target], "partial")
+
     def test_selected_tests_confirm_demo_regression(self):
         repo = Path(__file__).parents[1] / "demo_checkout"
         impact = {"shop/pricing.py::apply_coupon": [
