@@ -767,14 +767,16 @@
             "text",
             {
               x: p.x + cardW - 13,
-              y: p.y + 23,
+              y: p.y + 39,
               class: "caption",
               "text-anchor": "end",
             },
             g,
           );
-          file.textContent = n.file;
-          const name = el("text", { x: p.x + 18, y: p.y + 53, class: "name" }, g);
+          file.textContent = n.file.length > 30
+            ? n.file.slice(0, 13) + "…" + n.file.slice(-14)
+            : n.file;
+          const name = el("text", { x: p.x + 18, y: p.y + 58, class: "name" }, g);
           wrapName(n.name).forEach((line, i) => {
             const span = el("tspan", { x: p.x + 18, dy: i ? 17 : 0 }, name);
             span.textContent = line;
