@@ -10,6 +10,41 @@ import review
 
 
 class ReviewAgentTests(unittest.TestCase):
+    def test_base_comparison_distinguishes_repairs_from_new_failures(self):
+        selected = ["tests/test_a.py::test_fixed", "tests/test_a.py::test_regressed",
+                    "tests/test_a.py::test_stable"]
+        base = {"statuses": dict(zip(selected, ["failed", "passed", "passed"]))}
+        head = {"node_ids": selected,
+                "statuses": dict(zip(selected, ["passed", "failed", "passed"]))}
+        result = review.compare_test_runs(base, head, "a" * 40, "b" * 40)
+        self.assertEqual(result["now_passing"], 1)
+        self.assertEqual(result["new_failures"], 1)
+        self.assertEqual([row["change"] for row in result["rows"]],
+                         ["now passes", "new failure", "passed on both"])
+        self.assertIn("Base vs PR verification", review.comparison_section(result))
+
+    def test_agent_uses_base_comparison_for_next_action(self):
+        changed = [SimpleNamespace(id="a.py::target")]
+        decision = {"focus_function": "a.py::target", "priority_test": None}
+        run = {"node_ids": ["tests/test_a.py::test_target"],
+               "statuses": {"tests/test_a.py::test_target": "passed"}, "output": "1 passed"}
+        comparison = {"now_passing": 1, "new_failures": 0}
+        response = {"content": json.dumps({"next_action_code": "review_fix",
+                                            "fix_proposal": ""})}
+        with patch.object(review, "_openrouter_chat", return_value=response) as chat:
+            result = review.review_followup(changed, "diff", {changed[0].id: []},
+                                            decision, run, comparison)
+        self.assertIn("base failures now pass", result["next_action"])
+        self.assertIn("Base-to-PR comparison: 1 now passing",
+                      chat.call_args.args[0][1]["content"])
+
+    def test_public_pr_log_hides_temporary_checkout_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = f"rootdir: {Path(directory).resolve()}\n"
+            shown = review._display_test_output(log, directory, True)
+        self.assertIn("<temporary PR checkout>", shown)
+        self.assertNotIn(directory, shown)
+
     def test_public_pr_test_environment_excludes_parent_secrets(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.dict(os.environ, {"FALKORDB_PASSWORD": "secret",

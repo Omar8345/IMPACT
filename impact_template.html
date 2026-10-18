@@ -376,6 +376,25 @@
         font-weight: 750;
       }
       .result-strip[hidden] { display: none; }
+      .comparison-panel {
+        margin: 12px 0;
+        padding: 16px;
+        border: 1px solid var(--pass);
+        border-radius: 10px;
+        background: var(--surface);
+      }
+      .comparison-panel[hidden] { display: none; }
+      .comparison-panel h3 { margin: 7px 0; font-size: 17px; }
+      .comparison-panel p { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+      .comparison-rows { display: grid; gap: 5px; }
+      .comparison-row {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 16px; border-top: 1px solid var(--line); padding: 8px 0;
+        font-size: 11px; overflow-wrap: anywhere;
+      }
+      .comparison-row strong { flex: none; color: var(--pass); }
+      .comparison-row strong.bad { color: var(--accent); }
+      .comparison-row small { display: block; color: var(--muted); margin-top: 3px; }
       .browser-dialog {
         width: min(860px, calc(100vw - 30px));
         max-height: min(78vh, 760px);
@@ -674,6 +693,12 @@
           ><span class="step">→ Tests</span>
         </div>
         <div class="result-strip" id="result-strip" hidden></div>
+        <section class="comparison-panel" id="comparison-panel" hidden>
+          <div class="eyebrow">Base → PR / Verified</div>
+          <h3 id="comparison-headline"></h3>
+          <p id="comparison-commits"></p>
+          <div class="comparison-rows" id="comparison-rows"></div>
+        </section>
         <div class="canvas">
           <svg
             id="graph"
@@ -719,6 +744,29 @@
         setTheme(root.dataset.theme === "dark" ? "light" : "dark"),
       );
       const data = __DATA__;
+      if (data.comparison) {
+        const comparison = data.comparison;
+        document.getElementById("comparison-panel").hidden = false;
+        document.getElementById("comparison-headline").textContent =
+          `${comparison.now_passing} now passing · ${comparison.new_failures} new failures`;
+        document.getElementById("comparison-commits").textContent =
+          `Selected tests on base ${comparison.base_sha.slice(0, 12)} (when present) and PR ${comparison.head_sha.slice(0, 12)}.`;
+        const list = document.getElementById("comparison-rows");
+        comparison.rows.forEach((row) => {
+          const item = document.createElement("div");
+          item.className = "comparison-row";
+          const labels = document.createElement("div");
+          labels.textContent = row.test;
+          const states = document.createElement("small");
+          states.textContent = `${row.base.toUpperCase()} → ${row.head.toUpperCase()}`;
+          labels.appendChild(states);
+          const change = document.createElement("strong");
+          change.textContent = row.change;
+          if (row.change === "new failure") change.className = "bad";
+          item.append(labels, change);
+          list.appendChild(item);
+        });
+      }
       if (data.case_summary) {
         const strip = document.getElementById("result-strip");
         strip.textContent = "Observed test run: " + data.case_summary;

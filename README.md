@@ -19,7 +19,8 @@ produce its impact paths or test selection without FalkorDB.
 > **Inspect a complete GitHub PR review:** [Harbor Cart PR #1](https://github.com/Omar8345/impact-checkout-demo/pull/1)
 > fixes an oversized-coupon bug in a separate, synthetic repository. IMPACT
 > traced the changed function through its callers to three tests, ran them on
-> the PR head (**3 passed**), and linked the relevant owner, decision, and
+> both commits (**2 failed on the base; all 3 passed on the PR**), and linked
+> the relevant owner, decision, and
 > support ticket. [Explore the HTML review](https://omar8345.github.io/IMPACT/checkout-pr/) ·
 > [Read the report](docs/checkout-pr/impact-report.md) ·
 > [See IMPACT's comment on the PR](https://github.com/Omar8345/impact-checkout-demo/pull/1#issuecomment-6247371092)
@@ -29,7 +30,7 @@ produce its impact paths or test selection without FalkorDB.
 | Review | Selected tests | Observed result | Agent's next step |
 | --- | ---: | --- | --- |
 | [Coupon regression](https://omar8345.github.io/IMPACT/coupon-agent/) (synthetic) | 3 | 2 failed, 1 passed | Review the proposed discount cap, then rerun |
-| [Harbor Cart fix PR #1](https://omar8345.github.io/IMPACT/checkout-pr/) (synthetic PR) | 3 | 3 passed | Run the broader repository suite before merging |
+| [Harbor Cart fix PR #1](https://omar8345.github.io/IMPACT/checkout-pr/) (synthetic PR) | 3 on both commits | 2 base failures now pass; 0 new failures | Review the fix and remaining checks |
 | [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/) | 1 | 1 passed | Run the broader test suite |
 | [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/) | 18 targets, 43 cases | 34 passed, 9 remote cases skipped | Run the skipped cases with the required service |
 
@@ -249,6 +250,17 @@ pass `--company-file company.json` to include that context in the review.
 To run its graph-selected tests, add `--run-tests`. Only use that for code you
 trust; it executes code from the PR on your machine. Add `--llm` if you also
 want the optional OpenRouter graph-tool step.
+
+To check whether those selected tests changed outcome, add `--compare-base`
+alongside `--run-tests`. IMPACT runs the same tests on the PR's exact base commit
+when they exist there, then shows a base-versus-PR table in Markdown and HTML.
+Tests added only in the PR are marked inconclusive for the base. This also runs
+code from the base commit, so use it only with repositories you trust.
+
+```bash
+python main.py pr https://github.com/OWNER/REPO/pull/123 \
+  --run-tests --compare-base --llm
+```
 
 To publish the generated report as a comment on the PR timeline, authenticate
 GitHub CLI (`gh auth login`) and explicitly add `--post-comment`:

@@ -1,6 +1,6 @@
 # How IMPACT works
 
-Think of the project as a chain of five small jobs:
+Think of the project as a chain of six small jobs:
 
 1. **Read the code.** `repo_parser.py` uses Python's built-in `ast` parser. It
    records each function, its file and line range, and calls it can resolve
@@ -23,6 +23,8 @@ Think of the project as a chain of five small jobs:
    observed statuses. The model then chooses a bounded next action and may
    suggest an unverified fix for a failing test. No suggested patch is applied.
    The app checks those choices against graph results before using them.
+   For a trusted GitHub PR, `--compare-base` reruns the same selected tests on
+   the exact base commit and reports outcomes that appeared or disappeared.
 6. **Bring in company context when supplied.** `company.py` loads a curated
    manifest of owners and source documents into the same FalkorDB graph. The
    `company` command and PR review query those links to suggest a reviewer and

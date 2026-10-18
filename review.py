@@ -59,6 +59,13 @@ def _test_env(repo, restricted=False):
     return env
 
 
+def _display_test_output(output, repo, restricted):
+    if not restricted:
+        return output
+    return (output.replace(str(Path(repo).resolve()), "<temporary PR checkout>")
+            .replace(sys.executable, "python"))
+
+
 def _unittest_id(node_id):
     parts = node_id.split("::")
     if len(parts) < 3:
@@ -85,7 +92,7 @@ def run_selected_tests(repo, impacts, timeout=180, direct_tests=(),
     try:
         result = subprocess.run(command, cwd=repo, text=True, capture_output=True,
                                 timeout=timeout, check=False, env=_test_env(repo, restricted_env))
-        output = result.stdout + result.stderr
+        output = _display_test_output(result.stdout + result.stderr, repo, restricted_env)
         outcomes = {node_id: set() for node_id in node_ids}
         for line in result.stdout.splitlines():
             for node_id in node_ids:
@@ -139,7 +146,7 @@ def _run_unittest_targets(repo, node_ids, timeout, restricted_env=False):
             output.append(f"{target}: timed out after {timeout}s")
             worst_code = max(worst_code, 124)
             continue
-        combined = result.stdout + result.stderr
+        combined = _display_test_output(result.stdout + result.stderr, repo, restricted_env)
         output.append(f"$ python -m unittest -v {target}\n{combined}")
         statuses[node_id] = ("passed" if result.returncode == 0 else
                              "failed" if "FAIL:" in combined else "error")
@@ -178,7 +185,9 @@ def _run_custom_targets(repo, node_ids, template, timeout, restricted_env=False)
             worst_code = max(worst_code, 127)
             continue
         statuses[node_id] = "passed" if result.returncode == 0 else "failed"
-        output.append(f"$ {shlex.join(args)}\n{result.stdout}{result.stderr}")
+        display_command = shlex.join(args).replace(sys.executable, "python")
+        combined = _display_test_output(result.stdout + result.stderr, repo, restricted_env)
+        output.append(f"$ {display_command}\n{combined}")
         worst_code = max(worst_code, result.returncode)
     return {"node_ids": node_ids, "statuses": statuses,
             "returncode": worst_code, "output": "\n".join(output)}
@@ -195,6 +204,47 @@ def verification_section(test_run):
     for node_id in test_run["node_ids"]:
         lines.append(f"- {statuses.get(node_id, 'unknown').upper()}: `{node_id}`")
     lines.extend(["", "```text", test_run["output"][-5000:].rstrip(), "```", ""])
+    return "\n".join(lines)
+
+
+def compare_test_runs(base_run, head_run, base_sha, head_sha):
+    """Compare the same graph-selected tests on the exact PR base and head."""
+    rows = []
+    for test_id in head_run["node_ids"]:
+        before = base_run["statuses"].get(test_id, "unknown")
+        after = head_run["statuses"].get(test_id, "unknown")
+        if before in {"failed", "error"} and after == "passed":
+            change = "now passes"
+        elif before == "passed" and after in {"failed", "error"}:
+            change = "new failure"
+        elif before == after == "passed":
+            change = "passed on both"
+        elif before in {"failed", "error"} and after in {"failed", "error"}:
+            change = "still failing"
+        else:
+            change = "inconclusive"
+        rows.append({"test": test_id, "base": before, "head": after, "change": change})
+    return {"base_sha": base_sha, "head_sha": head_sha, "rows": rows,
+            "base_output": base_run.get("output", "")[-4000:],
+            "now_passing": sum(r["change"] == "now passes" for r in rows),
+            "new_failures": sum(r["change"] == "new failure" for r in rows)}
+
+
+def comparison_section(comparison):
+    lines = ["## Base vs PR verification", "",
+             "Graph-selected tests from the PR head also ran on the exact base commit "
+             "when present there; missing tests are inconclusive.",
+             f"Base: `{comparison['base_sha'][:12]}` · PR head: `{comparison['head_sha'][:12]}`.", "",
+             f"**{comparison['now_passing']} now passing; "
+             f"{comparison['new_failures']} new failures.**", "",
+             "| Selected test | Base | PR head | Change |",
+             "| --- | --- | --- | --- |"]
+    for row in comparison["rows"]:
+        lines.append(f"| `{row['test']}` | {row['base']} | {row['head']} | {row['change']} |")
+    if not comparison["rows"]:
+        lines.append("| No graph-selected tests | — | — | inconclusive |")
+    lines.extend(["", "<details><summary>Base test output</summary>", "", "```text",
+                  comparison["base_output"].rstrip(), "```", "", "</details>"])
     return "\n".join(lines)
 
 
@@ -370,10 +420,11 @@ NEXT_ACTIONS = {
     "run_skipped": "Run the skipped cases where their required services are available.",
     "broader_tests": "Run the broader repository test suite before merging.",
     "run_selected": "Run the graph-selected tests before merging.",
+    "review_fix": "Review the change and its graph evidence; the selected base failures now pass on this PR.",
 }
 
 
-def review_followup(changed, diff_text, impacts, decision, test_run):
+def review_followup(changed, diff_text, impacts, decision, test_run, comparison=None):
     """Use observed test results for a bounded next action, with an optional fix idea."""
     statuses = test_run.get("statuses", {}) if test_run else {}
     observed = set(statuses.values())
@@ -389,6 +440,12 @@ def review_followup(changed, diff_text, impacts, decision, test_run):
         verdict, allowed, fallback = (
             "Some selected test cases were skipped; coverage is incomplete.",
             {"run_skipped", "broader_tests"}, "run_skipped")
+    elif (observed == {"passed"} and comparison and
+          comparison["now_passing"] > 0 and comparison["new_failures"] == 0):
+        verdict, allowed, fallback = (
+            f"{comparison['now_passing']} selected tests did not pass on the base commit "
+            "and pass on the PR head; no new selected failures were observed.",
+            {"review_fix", "broader_tests"}, "review_fix")
     elif observed == {"passed"}:
         verdict, allowed, fallback = (
             "No failure was observed in the selected tests.",
@@ -410,6 +467,9 @@ def review_followup(changed, diff_text, impacts, decision, test_run):
     if test_run:
         results = "\n".join(f"- {tid}: {statuses.get(tid, 'unknown')}"
                             for tid in test_run.get("node_ids", [])[:30])
+        comparison_note = (f"Base-to-PR comparison: {comparison['now_passing']} now passing; "
+                           f"{comparison['new_failures']} new failures.\n"
+                           if comparison else "")
         prompt = ("A graph-backed PR review has now run its selected tests. "
                   "Choose the next action using ONLY the observed results. "
                   "Return ONLY JSON with next_action_code and fix_proposal. "
@@ -420,7 +480,7 @@ def review_followup(changed, diff_text, impacts, decision, test_run):
                   "tests passed or that all repository tests ran.\n\n"
                   f"Changed function: {focus}\n"
                   f"Verified call path: {evidence or 'No static path available'}\n"
-                  f"Observed selected-test statuses:\n{results}\n"
+                  f"Observed selected-test statuses:\n{results}\n" + comparison_note +
                   f"Runner output (truncated):\n{test_run.get('output', '')[-3000:]}\n"
                   f"Diff (truncated):\n{diff_text[:5000]}")
         try:
@@ -443,7 +503,11 @@ def review_followup(changed, diff_text, impacts, decision, test_run):
                 proposal = " ".join(suggested.split())[:350]
         except (RuntimeError, ValueError, json.JSONDecodeError):
             pass
-    return {"verdict": verdict, "next_action": NEXT_ACTIONS[action],
+    next_action = NEXT_ACTIONS[action]
+    if (action == "broader_tests" and comparison and
+            comparison["now_passing"] > 0 and comparison["new_failures"] == 0):
+        next_action = "Review the fix and run any remaining checks before merging."
+    return {"verdict": verdict, "next_action": next_action,
             "fix_proposal": proposal, "evidence_test": observed_test,
             "evidence_path": evidence}
 
@@ -461,7 +525,8 @@ def followup_section(followup):
 HTML = Path(__file__).with_name("impact_template.html").read_text(encoding="utf-8")
 
 
-def write_html(changed, impacts, path, test_run=None, decision=None, company_context=None):
+def write_html(changed, impacts, path, test_run=None, decision=None,
+               company_context=None, comparison=None):
     nodes, edges = {}, set()
     for f in changed:
         nodes[f.id] = {"id": f.id, "file": Path(f.file).name, "name": f.qualname,
@@ -493,6 +558,7 @@ def write_html(changed, impacts, path, test_run=None, decision=None, company_con
                 node["status"] = test_run["statuses"].get(tools.pytest_id(node["id"]), "unknown")
     data = {"nodes": list(nodes.values()),
             "edges": [{"from": x, "to": y} for x, y in sorted(edges)],
+            "comparison": comparison,
             "ai": ({"focus": decision["focus_function"],
                     "priority_test": decision["priority_test"],
                     "reason": decision["reason"],

@@ -7,6 +7,7 @@
 """
 import argparse
 import subprocess
+from contextlib import nullcontext
 from pathlib import Path
 
 import graph
@@ -37,7 +38,7 @@ def cmd_review(a):
     return produce_review(a.repo, diff, a)
 
 
-def produce_review(repo, diff, a):
+def produce_review(repo, diff, a, base_repo=None, base_sha=None, head_sha=None):
     funcs, _ = parse_repo(repo)
     changed = changed_functions(funcs, parse_diff(diff))
     if not changed:
@@ -58,16 +59,31 @@ def produce_review(repo, diff, a):
         priority_test=decision["priority_test"] if decision else None,
         test_command=a.test_command,
         restricted_env=getattr(a, "restricted_env", False)) if a.run_tests else None)
+    comparison = None
+    if base_repo is not None and test_run is not None:
+        base_funcs, _ = parse_repo(base_repo)
+        available = {review.tools.pytest_id(f.id) for f in base_funcs if f.is_test}
+        comparable = [test_id for test_id in test_run["node_ids"] if test_id in available]
+        base_run = review.run_selected_tests(
+            base_repo, {}, direct_tests=comparable,
+            priority_test=decision["priority_test"] if decision else None,
+            test_command=a.test_command, restricted_env=True)
+        comparison = review.compare_test_runs(base_run, test_run, base_sha, head_sha)
     if decision and test_run is not None:
-        decision["followup"] = review.review_followup(changed, diff, impacts, decision, test_run)
+        decision["followup"] = review.review_followup(
+            changed, diff, impacts, decision, test_run, comparison)
     if decision:
         report = decision["report"].rstrip()
         report += "\n\n" + review.graph_evidence_section(changed, impacts)
         if test_run is not None:
             report += "\n\n" + review.verification_section(test_run).rstrip()
+            if comparison is not None:
+                report += "\n\n" + review.comparison_section(comparison)
             report += "\n\n" + review.followup_section(decision["followup"])
     else:
         report = review.deterministic_report(changed, impacts, repo, test_run)
+        if comparison is not None:
+            report += "\n\n" + review.comparison_section(comparison)
     g = graph.connect()
     contexts = [company.context(g, f.id) for f in changed]
     company_note = company.report(contexts)
@@ -77,7 +93,7 @@ def produce_review(repo, diff, a):
     if a.report:
         Path(a.report).write_text(report + "\n", encoding="utf-8")
         print(f"Report written to {a.report}")
-    review.write_html(changed, impacts, a.html, test_run, decision, contexts)
+    review.write_html(changed, impacts, a.html, test_run, decision, contexts, comparison)
     print(f"\nGraph written to {a.html}")
     return report
 
@@ -97,7 +113,8 @@ def cmd_pr(a):
         if company_data:
             people, sources = company.sync(g, company_data)
             print(f"Connected {people} people and {sources} source documents.")
-        report = produce_review(repo, diff, a)
+        with (github_pr.checkout_base(pr, repo) if a.compare_base else nullcontext(None)) as base_repo:
+            report = produce_review(repo, diff, a, base_repo, pr["base_sha"], pr["head_sha"])
     if a.post_comment:
         if not report:
             print("No Python function impact report to post.")
@@ -152,6 +169,7 @@ def main():
     s.add_argument("url", help="https://github.com/owner/repo/pull/123")
     s.add_argument("--llm", action="store_true", help="let an OpenRouter model use graph tools")
     s.add_argument("--run-tests", action="store_true", help="run selected tests from the PR checkout")
+    s.add_argument("--compare-base", action="store_true", help="run the same selected tests on the PR base commit")
     s.add_argument("--test-command", help="custom runner with {test} or {unittest}; requires --run-tests")
     s.add_argument("--post-comment", action="store_true", help="post the report to the PR with gh authentication")
     s.add_argument("--company-file", help="manifest path inside the PR checkout")
@@ -173,6 +191,8 @@ def main():
     a = p.parse_args()
     if getattr(a, "test_command", None) and not a.run_tests:
         p.error("--test-command requires --run-tests")
+    if getattr(a, "compare_base", False) and not a.run_tests:
+        p.error("--compare-base requires --run-tests")
     a.fn(a)
 
 

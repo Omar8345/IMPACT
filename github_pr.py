@@ -87,6 +87,17 @@ def checkout_pr(pr):
         yield repo, diff
 
 
+@contextmanager
+def checkout_base(pr, head_repo):
+    """Check out the PR's base commit beside its temporary head checkout."""
+    base_repo = Path(head_repo).parent / "base"
+    _git(["worktree", "add", "--detach", str(base_repo), pr["base_sha"]], cwd=head_repo)
+    try:
+        yield base_repo
+    finally:
+        _git(["worktree", "remove", "--force", str(base_repo)], cwd=head_repo)
+
+
 def post_comment(pr, body):
     """Post a timeline comment using the user's existing gh authentication."""
     endpoint = f"repos/{pr['owner']}/{pr['repo']}/issues/{pr['number']}/comments"
