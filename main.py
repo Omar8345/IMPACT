@@ -58,11 +58,14 @@ def produce_review(repo, diff, a):
         priority_test=decision["priority_test"] if decision else None,
         test_command=a.test_command,
         restricted_env=getattr(a, "restricted_env", False)) if a.run_tests else None)
+    if decision and test_run is not None:
+        decision["followup"] = review.review_followup(changed, diff, impacts, decision, test_run)
     if decision:
         report = decision["report"].rstrip()
         report += "\n\n" + review.graph_evidence_section(changed, impacts)
         if test_run is not None:
             report += "\n\n" + review.verification_section(test_run).rstrip()
+            report += "\n\n" + review.followup_section(decision["followup"])
     else:
         report = review.deterministic_report(changed, impacts, repo, test_run)
     g = graph.connect()

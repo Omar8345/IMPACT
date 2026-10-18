@@ -28,7 +28,10 @@ The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
 With `--llm`, an OpenRouter model queries graph tools and prioritizes a changed
 function and a verified test. The application checks those choices and renders
-the review from graph and test results.
+the review from graph and test results. After an optional test run, the agent
+chooses a next review action from the observed outcomes. If a test fails, it may
+suggest a candidate fix; that suggestion is clearly marked unverified and is
+never applied to the repository.
 
 **What is the agent?** In `--llm` mode, a model calls FalkorDB-backed tools to
 inspect changed functions, then chooses a review priority from graph-verified
@@ -65,6 +68,10 @@ The agent traces `apply_coupon` through checkout and receipts to three tests.
 When asked to run those tests, it confirms that the two large-coupon cases fail
 and the normal-coupon case passes. A call path means _potential impact_;
 only running a test establishes its actual result.
+
+[Explore the coupon agent review](https://omar8345.github.io/IMPACT/coupon-agent/):
+it shows the failing tests, their FalkorDB call path, and a candidate fix that
+the agent proposes for human review.
 
 ## Requirements
 
@@ -265,7 +272,9 @@ python main.py review ./demo_checkout --diff-file ./demo_checkout/coupon_bug.pat
 ```
 
 `--llm` sends changed-function IDs and up to 12,000 characters of the diff to
-OpenRouter. Use it only with code you are allowed to send. The model receives
+OpenRouter. With `--run-tests`, it also sends selected-test statuses and a
+truncated runner output for the post-test decision. Use it only with code and
+test output you are allowed to send. The model receives
 FalkorDB-backed tools and must support tool calling. The deterministic review
 remains available without any API key. If the selected model or API fails, the
 command falls back to that graph review and says why.
@@ -273,9 +282,9 @@ The model queries `impact_of_change` for each changed function, then chooses
 which changed function and eligible test to inspect first. The application
 validates both IDs against the diff and FalkorDB results. With `--run-tests`,
 that test runs first, followed by every other selected test. The report and HTML
-show the AI priority separately from observed test results. Model prose cannot
-change test counts or claim a charge happened when checkout actually raised an
-error.
+show the AI priority, observed test results, and next action. The application
+derives the verdict from real test statuses; model prose cannot change test
+counts or mark skipped cases as passed.
 
 ## Architecture and limitations
 

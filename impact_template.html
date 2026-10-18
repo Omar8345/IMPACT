@@ -239,6 +239,8 @@
       .ai-panel h2 { color: var(--test); margin: 0 0 10px; }
       .ai-panel p { font-size: 11px; line-height: 1.5; margin: 7px 0; }
       .ai-panel button { padding: 8px 0; border: 0; background: none; color: var(--test); font-size: 11px; font-weight: 800; text-align: left; overflow-wrap: anywhere; }
+      .ai-followup { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+      .ai-followup strong { color: var(--text); }
       .company-panel { padding: 14px; border: 1px solid var(--accent); border-radius: 9px; background: var(--surface); overflow-wrap: anywhere; margin-top: 12px; }
       .company-panel[hidden] { display: none; }
       .company-panel h2 { color: var(--accent); margin: 0 0 10px; }
@@ -620,6 +622,12 @@
           <p id="ai-focus"></p>
           <button id="ai-test" type="button"></button>
           <p id="ai-outcome"></p>
+          <div class="ai-followup" id="ai-followup" hidden>
+            <p><strong>After testing</strong></p>
+            <p id="ai-verdict"></p>
+            <p id="ai-action"></p>
+            <p id="ai-proposal" hidden></p>
+          </div>
         </section>
         <section class="company-panel" id="company-panel" hidden>
           <h2>Company / Context</h2>
@@ -773,6 +781,17 @@
           document.getElementById("ai-outcome").textContent = chosen && chosen.status
             ? "Observed result: " + chosen.status.toUpperCase()
             : "Test has not been run.";
+        }
+        if (data.ai.followup) {
+          document.getElementById("ai-followup").hidden = false;
+          document.getElementById("ai-verdict").textContent = data.ai.followup.verdict;
+          document.getElementById("ai-action").textContent =
+            "Next: " + data.ai.followup.next_action;
+          if (data.ai.followup.fix_proposal) {
+            const proposal = document.getElementById("ai-proposal");
+            proposal.textContent = "Candidate fix (unverified): " + data.ai.followup.fix_proposal;
+            proposal.hidden = false;
+          }
         }
       }
       const ns = "http://www.w3.org/2000/svg",

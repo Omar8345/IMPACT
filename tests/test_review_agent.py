@@ -147,6 +147,42 @@ class ReviewAgentTests(unittest.TestCase):
         self.assertIn("Cases::test_one", summary)
         self.assertIn("Cases::test_two", summary)
 
+    def test_agent_followup_uses_failure_and_labels_fix_unverified(self):
+        from repo_parser import Func
+        changed = [Func("shop/pricing.py::apply_coupon", "apply_coupon", "apply_coupon",
+                        "shop/pricing.py", 4, 9, False)]
+        test_id = "tests/test_receipts.py::ReceiptTests::test_receipt_large_coupon"
+        impacts = {changed[0].id: [{
+            "id": "tests/test_receipts.py::ReceiptTests.test_receipt_large_coupon",
+            "is_test": True, "path": [
+                "tests/test_receipts.py::ReceiptTests.test_receipt_large_coupon",
+                "shop/receipts.py::receipt_total", changed[0].id]}]}
+        decision = {"focus_function": changed[0].id, "priority_test": test_id}
+        run = {"node_ids": [test_id], "statuses": {test_id: "failed"},
+               "output": "AssertionError: -1000 != 0"}
+        response = {"content": json.dumps({"next_action_code": "propose_fix",
+                                            "fix_proposal": "Clamp the coupon to the subtotal."})}
+        with patch.object(review, "_openrouter_chat", return_value=response) as chat:
+            followup = review.review_followup(changed, "- min(...)\n+ coupon_cents", impacts, decision, run)
+        self.assertIn("failed", followup["verdict"])
+        self.assertIn("Clamp the coupon", followup["fix_proposal"])
+        self.assertIn("receipt_total", followup["evidence_path"])
+        self.assertIn("Candidate fix (unverified)", review.followup_section(followup))
+        self.assertIn("AssertionError", chat.call_args.args[0][1]["content"])
+
+    def test_agent_followup_does_not_claim_skipped_cases_passed(self):
+        decision = {"focus_function": "a.py::target", "priority_test": "tests/test_a.py::test_target"}
+        run = {"node_ids": [decision["priority_test"]],
+               "statuses": {decision["priority_test"]: "partial"},
+               "output": "1 passed, 1 skipped"}
+        response = {"content": json.dumps({"next_action_code": "run_skipped",
+                                            "fix_proposal": "Invent a fix."})}
+        with patch.object(review, "_openrouter_chat", return_value=response):
+            followup = review.review_followup([], "", {"a.py::target": []}, decision, run)
+        self.assertIn("coverage is incomplete", followup["verdict"])
+        self.assertEqual(followup["fix_proposal"], "")
+        self.assertIn("required services", followup["next_action"])
+
     def test_html_marks_actual_test_status_only_when_supplied(self):
         from repo_parser import Func
         changed = [Func("a.py::target", "target", "target", "a.py", 1, 2, False)]
@@ -183,13 +219,20 @@ class ReviewAgentTests(unittest.TestCase):
                                     "hops": 1, "path": [test_id, changed[0].id]}]}
         decision = {"focus_function": changed[0].id,
                     "priority_test": "tests/test_a.py::Case::test_target",
-                    "reason": "The edit may affect a boundary case."}
+                    "reason": "The edit may affect a boundary case.",
+                    "followup": {"verdict": "Selected tests failed.",
+                                 "next_action": "Review the candidate fix.",
+                                 "fix_proposal": "Check the boundary.",
+                                 "evidence_test": "tests/test_a.py::Case::test_target",
+                                 "evidence_path": "test_target → target"}}
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "impact.html"
             review.write_html(changed, impacts, output, decision=decision)
             html = output.read_text()
         self.assertIn('"ai": {"focus": "a.py::target"', html)
         self.assertIn('"priority_test": "tests/test_a.py::Case::test_target"', html)
+        self.assertIn('"verdict": "Selected tests failed."', html)
+        self.assertIn('"fix_proposal": "Check the boundary."', html)
         self.assertIn('id="ai-panel"', html)
 
 

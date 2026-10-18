@@ -19,6 +19,9 @@ Think of the project as a chain of five small jobs:
    it runs them and records actual outcomes. It prints Markdown and generates
    an interactive HTML path explorer. With `--llm`, OpenRouter queries graph
    tools and chooses a changed function and eligible test to inspect first.
+   When the selected tests finish, the application derives a verdict from their
+   observed statuses. The model then chooses a bounded next action and may
+   suggest an unverified fix for a failing test. No suggested patch is applied.
    The app checks those choices against graph results before using them.
 6. **Bring in company context when supplied.** `company.py` loads a curated
    manifest of owners and source documents into the same FalkorDB graph. The

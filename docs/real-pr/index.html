@@ -239,6 +239,8 @@
       .ai-panel h2 { color: var(--test); margin: 0 0 10px; }
       .ai-panel p { font-size: 11px; line-height: 1.5; margin: 7px 0; }
       .ai-panel button { padding: 8px 0; border: 0; background: none; color: var(--test); font-size: 11px; font-weight: 800; text-align: left; overflow-wrap: anywhere; }
+      .ai-followup { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+      .ai-followup strong { color: var(--text); }
       .company-panel { padding: 14px; border: 1px solid var(--accent); border-radius: 9px; background: var(--surface); overflow-wrap: anywhere; margin-top: 12px; }
       .company-panel[hidden] { display: none; }
       .company-panel h2 { color: var(--accent); margin: 0 0 10px; }
@@ -620,6 +622,12 @@
           <p id="ai-focus"></p>
           <button id="ai-test" type="button"></button>
           <p id="ai-outcome"></p>
+          <div class="ai-followup" id="ai-followup" hidden>
+            <p><strong>After testing</strong></p>
+            <p id="ai-verdict"></p>
+            <p id="ai-action"></p>
+            <p id="ai-proposal" hidden></p>
+          </div>
         </section>
         <section class="company-panel" id="company-panel" hidden>
           <h2>Company / Context</h2>
@@ -710,7 +718,7 @@
       themeButton.addEventListener("click", () =>
         setTheme(root.dataset.theme === "dark" ? "light" : "dark"),
       );
-      const data = {"nodes": [{"id": "src/requests/adapters.py::HTTPAdapter.request_url", "file": "adapters.py", "name": "HTTPAdapter.request_url", "kind": "change", "changed": true, "depth": 0, "path": ["src/requests/adapters.py::HTTPAdapter.request_url"]}, {"id": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "file": "test_adapters.py", "name": "test_request_url_trims_leading_path_separators", "kind": "test", "changed": true, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "tests/test_adapters.py::test_request_url_trims_leading_path_separators"], "status": "passed"}, {"id": "src/requests/adapters.py::HTTPAdapter.send", "file": "adapters.py", "name": "HTTPAdapter.send", "kind": "function", "changed": false, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "src/requests/adapters.py::HTTPAdapter.send"]}], "edges": [{"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "src/requests/adapters.py::HTTPAdapter.send"}, {"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"}], "ai": {"focus": "src/requests/adapters.py::HTTPAdapter.request_url", "priority_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "reason": "The edit may affect a boundary case."}, "company": [], "case_summary": "1 case passed", "links": [{"label": "Source PR \u2197", "href": "https://github.com/psf/requests/pull/6644"}, {"label": "Full Markdown report \u2197", "href": "impact-report.md"}]};
+      const data = {"nodes": [{"id": "src/requests/adapters.py::HTTPAdapter.request_url", "file": "adapters.py", "name": "HTTPAdapter.request_url", "kind": "change", "changed": true, "depth": 0, "path": ["src/requests/adapters.py::HTTPAdapter.request_url"]}, {"id": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "file": "test_adapters.py", "name": "test_request_url_trims_leading_path_separators", "kind": "test", "changed": true, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "tests/test_adapters.py::test_request_url_trims_leading_path_separators"], "status": "passed"}, {"id": "src/requests/adapters.py::HTTPAdapter.send", "file": "adapters.py", "name": "HTTPAdapter.send", "kind": "function", "changed": false, "depth": 1, "path": ["src/requests/adapters.py::HTTPAdapter.request_url", "src/requests/adapters.py::HTTPAdapter.send"]}], "edges": [{"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "src/requests/adapters.py::HTTPAdapter.send"}, {"from": "src/requests/adapters.py::HTTPAdapter.request_url", "to": "tests/test_adapters.py::test_request_url_trims_leading_path_separators"}], "ai": {"focus": "src/requests/adapters.py::HTTPAdapter.request_url", "priority_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "reason": "The edit may affect a boundary case.", "followup": {"verdict": "No failure was observed in the selected tests.", "next_action": "Run the broader repository test suite before merging.", "fix_proposal": "", "evidence_test": "tests/test_adapters.py::test_request_url_trims_leading_path_separators", "evidence_path": "test_adapters:test_request_url_trims_leading_path_separators \u2192 adapters:HTTPAdapter.request_url"}}, "company": [], "case_summary": "1 case passed", "links": [{"label": "Source PR \u2197", "href": "https://github.com/psf/requests/pull/6644"}, {"label": "Full Markdown report \u2197", "href": "impact-report.md"}]};
       if (data.case_summary) {
         const strip = document.getElementById("result-strip");
         strip.textContent = "Observed test run: " + data.case_summary;
@@ -773,6 +781,17 @@
           document.getElementById("ai-outcome").textContent = chosen && chosen.status
             ? "Observed result: " + chosen.status.toUpperCase()
             : "Test has not been run.";
+        }
+        if (data.ai.followup) {
+          document.getElementById("ai-followup").hidden = false;
+          document.getElementById("ai-verdict").textContent = data.ai.followup.verdict;
+          document.getElementById("ai-action").textContent =
+            "Next: " + data.ai.followup.next_action;
+          if (data.ai.followup.fix_proposal) {
+            const proposal = document.getElementById("ai-proposal");
+            proposal.textContent = "Candidate fix (unverified): " + data.ai.followup.fix_proposal;
+            proposal.hidden = false;
+          }
         }
       }
       const ns = "http://www.w3.org/2000/svg",
