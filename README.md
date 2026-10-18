@@ -166,13 +166,10 @@ OpenRouter key and the `--llm` command under “Optional AI graph-tool use.”
 
 ## Hosted public analyzer
 
-Hosted analyzer URL: **not deployed yet**. The service is prepared for a small
-Railway/Render-style deployment with `Procfile` and `render.yaml`; set the
-FalkorDB Cloud variables in the provider dashboard, then publish the assigned
-HTTPS URL here. It accepts only public GitHub PR URLs, creates an isolated graph
-per job, and expires results. It parses Python without running repository code
-or tests; selected-test execution remains local-only. See the [deployment and
-environment-variable guide](docs/hosted-analyzer.md).
+Hosted analyzer: [impact-analyzer-cy2a.onrender.com](https://impact-analyzer-cy2a.onrender.com).
+It accepts only public GitHub PR URLs, creates an isolated graph per job, and
+expires results. It parses Python without running repository code or tests;
+selected-test execution remains local-only.
 
 The three-case evidence page is [published on GitHub Pages](https://omar8345.github.io/IMPACT/evaluation/).
 The controlled benchmark reports 29/29 failure-revealing test instances and
