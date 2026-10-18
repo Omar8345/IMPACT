@@ -23,7 +23,8 @@ produce its impact paths or test selection without FalkorDB.
 > the relevant owner, decision, and
 > support ticket. [Explore the HTML review](https://omar8345.github.io/IMPACT/checkout-pr/) ·
 > [Read the report](docs/checkout-pr/impact-report.md) ·
-> [See IMPACT's comment on the PR](https://github.com/Omar8345/impact-checkout-demo/pull/1#issuecomment-6247371092)
+> [See the automated PR comment](https://github.com/Omar8345/impact-checkout-demo/pull/1#issuecomment-6247534059) ·
+> [View the GitHub Actions run](https://github.com/Omar8345/impact-checkout-demo/actions/runs/39110757647)
 
 ## What the four runs showed
 
@@ -274,6 +275,12 @@ report, including test output if you chose `--run-tests`; the local HTML file is
 not uploaded. If the PR head changes while it is being fetched, rerun the command.
 Current PR analysis covers functions present in the new checkout; fully deleted
 or renamed functions need a future comparison of both code versions.
+
+For CI, the [sample repository's manual GitHub Actions workflow](https://github.com/Omar8345/impact-checkout-demo/blob/main/.github/workflows/impact-review.yml)
+starts FalkorDB in the runner, compares selected tests on both PR commits,
+uploads the Markdown and HTML reports, and updates a PR comment. Its test job
+has read-only access; a separate job posts the comment. It accepts PR branches
+from that repository and needs no cloud database or AI key.
 
 The Requests example requires the target project's runtime dependencies to run
 its tests. The HTTPie example shows a larger change and an isolated test run;
