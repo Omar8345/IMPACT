@@ -16,15 +16,23 @@ produce its impact paths or test selection without FalkorDB.
 > [Explore the graph, AI priority, and test results](https://omar8345.github.io/IMPACT/httpie-pr-1327/) ·
 > [Read the report](docs/httpie-pr-1327/impact-report.md)
 
-## What the three runs showed
+> **Inspect a complete GitHub PR review:** [Harbor Cart PR #1](https://github.com/Omar8345/impact-checkout-demo/pull/1)
+> fixes an oversized-coupon bug in a separate, synthetic repository. IMPACT
+> traced the changed function through its callers to three tests, ran them on
+> the PR head (**3 passed**), and linked the relevant owner, decision, and
+> support ticket. [Explore the HTML review](https://omar8345.github.io/IMPACT/checkout-pr/) ·
+> [Read the report](docs/checkout-pr/impact-report.md)
+
+## What the four runs showed
 
 | Review | Selected tests | Observed result | Agent's next step |
 | --- | ---: | --- | --- |
 | [Coupon regression](https://omar8345.github.io/IMPACT/coupon-agent/) (synthetic) | 3 | 2 failed, 1 passed | Review the proposed discount cap, then rerun |
+| [Harbor Cart fix PR #1](https://omar8345.github.io/IMPACT/checkout-pr/) (synthetic PR) | 3 | 3 passed | Run the broader repository suite before merging |
 | [Requests PR #6644](https://omar8345.github.io/IMPACT/real-pr/) | 1 | 1 passed | Run the broader test suite |
 | [HTTPie PR #1327](https://omar8345.github.io/IMPACT/httpie-pr-1327/) | 18 targets, 43 cases | 34 passed, 9 remote cases skipped | Run the skipped cases with the required service |
 
-These are three case studies, not an accuracy benchmark. Test outcomes come
+These are four case studies, not an accuracy benchmark. Test outcomes come
 from actual runs; the AI's review priorities and next steps are shown alongside
 them. The coupon fix is a proposal, not an applied or verified patch.
 
