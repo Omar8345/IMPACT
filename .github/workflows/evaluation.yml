@@ -38,9 +38,9 @@ jobs:
         run: git diff --exit-code -- evaluation/results.json docs/evaluation/results.json
 
   real_prs:
-    name: Recheck ${{ matrix.repository }} PR graph
+    name: Recheck ${{ matrix.repository }} PR graph and tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -67,8 +67,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: pip
       - run: python -m pip install -r requirements.txt
-      - name: Verify pinned PR graph and selected tests
-        run: python evaluation/real_prs.py "${{ matrix.repository }}"
+      - name: Verify pinned PR graph and execute selected tests
+        run: python evaluation/real_prs.py "${{ matrix.repository }}" --run-tests

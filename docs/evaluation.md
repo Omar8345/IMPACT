@@ -65,5 +65,7 @@ count in the committed evidence. A graph path means possible impact; it is not
 a test result, and neither real-PR case supports a failure-recall percentage.
 
 CI also checks out both PRs at the recorded commits, rebuilds their FalkorDB
-graphs, and verifies the selected test count and a representative call path.
-It does not rerun the selected tests or make a new failure-recall claim.
+graphs, verifies the selected test count and a representative call path, and
+runs the selected pytest cases. The job summary reports current pass, fail,
+error, and skip counts. HTTPie's remote `pie.dev` cases are skipped while its
+local cases run. These selected runs do not establish full-suite failure recall.
