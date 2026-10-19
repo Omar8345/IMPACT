@@ -51,6 +51,10 @@ Test outcomes come from actual runs; the AI's review priorities and next steps
 are shown alongside them. The coupon fix is a proposal, not an applied or
 verified patch.
 
+The two public PR results are also [reproduced in GitHub Actions](https://github.com/Omar8345/IMPACT/actions/runs/39244384359)
+at their recorded commits. That run rebuilt both FalkorDB graphs and executed
+their graph-selected pytest cases; HTTPie's remote `pie.dev` cases were skipped.
+
 The project enters **Track 01: Agents That Act on Connected Data** and
 **Track 03: Company Brain**. The graph analysis works without an LLM.
 With `--llm`, an OpenRouter model queries graph tools and prioritizes a changed
