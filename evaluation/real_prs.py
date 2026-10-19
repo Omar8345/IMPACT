@@ -36,7 +36,9 @@ PATHS = {
 def run_selected_tests(repo, case, selected):
     extras = "[test]" if case["repository"] == "httpie/cli" else ""
     packages = [f"{repo}{extras}", "pytest>=7,<8", "pytest-httpbin==2.0.0"]
-    if case["repository"] == "psf/requests":
+    if case["repository"] == "httpie/cli":
+        packages.append("urllib3>=1.26,<2")
+    else:
         packages.append("pytest-mock")
     install = subprocess.run(
         [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
