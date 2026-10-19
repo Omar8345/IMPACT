@@ -36,10 +36,10 @@ The fixture contains **24 tests** and **15 controlled mutations**. Failure recal
 Start FalkorDB, install the project requirements, and run:
 
 ```bash
-python evaluation/run.py
+python evaluation/run.py --markdown /tmp/impact-evaluation.md --html /tmp/impact-evaluation.html
 ```
 
-The command rewrites `evaluation/results.json`, the published HTML summary, and this report. The fixture uses synthetic data and the benchmark does not call an LLM.
+The command updates both copies of the raw benchmark results and writes generated presentation files to `/tmp`. The published report also includes separately documented public PR case studies. The fixture uses synthetic data and the benchmark does not call an LLM.
 
 ## Scope
 

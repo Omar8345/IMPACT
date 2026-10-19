@@ -33,6 +33,6 @@ jobs:
       - name: Run project tests
         run: python -m pytest -q tests
       - name: Reproduce benchmark
-        run: python evaluation/run.py
+        run: python evaluation/run.py --markdown "$RUNNER_TEMP/impact-evaluation.md" --html "$RUNNER_TEMP/impact-evaluation.html"
       - name: Confirm committed results are current
-        run: git diff --exit-code -- evaluation/results.json docs/evaluation.md docs/evaluation/index.html docs/evaluation/results.json
+        run: git diff --exit-code -- evaluation/results.json docs/evaluation/results.json
