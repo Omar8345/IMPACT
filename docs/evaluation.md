@@ -63,3 +63,7 @@ as evidence because its failures were not separated from environment and
 dependency incompatibilities. Requests has no reliable full-suite collection
 count in the committed evidence. A graph path means possible impact; it is not
 a test result, and neither real-PR case supports a failure-recall percentage.
+
+CI also checks out both PRs at the recorded commits, rebuilds their FalkorDB
+graphs, and verifies the selected test count and a representative call path.
+It does not rerun the selected tests or make a new failure-recall claim.

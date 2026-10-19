@@ -36,3 +36,39 @@ jobs:
         run: python evaluation/run.py --markdown "$RUNNER_TEMP/impact-evaluation.md" --html "$RUNNER_TEMP/impact-evaluation.html"
       - name: Confirm committed results are current
         run: git diff --exit-code -- evaluation/results.json docs/evaluation/results.json
+
+  real_prs:
+    name: Recheck ${{ matrix.repository }} PR graph
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repository: psf/requests
+            graph: impact_requests_ci
+          - repository: httpie/cli
+            graph: impact_httpie_ci
+    services:
+      falkordb:
+        image: falkordb/falkordb:latest-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      FALKORDB_HOST: 127.0.0.1
+      FALKORDB_PORT: 6379
+      FALKORDB_GRAPH: ${{ matrix.graph }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Verify pinned PR graph and selected tests
+        run: python evaluation/real_prs.py "${{ matrix.repository }}"
